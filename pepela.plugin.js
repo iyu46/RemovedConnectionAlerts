@@ -118,12 +118,6 @@ const getFriendsList = () => {
 
     for (let relationship of relationships) {
         const user = UserStore.getUser(relationship.toString())
-        try {
-            const id = user.id;
-        } catch (e) {
-            console.log(user)
-            console.dir(e);
-        }
         if (user) {
             const animatedAvatarURL = user.getAvatarURL(null, null, true);
             const hasAnimatedAvatarURL = animatedAvatarURL.includes("gif")
