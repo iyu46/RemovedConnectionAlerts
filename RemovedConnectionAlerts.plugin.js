@@ -77,7 +77,7 @@ if (!global.ZeresPluginLibrary) {
         getDescription() { return config.info.description; },
         getVersion() { return config.info.version; },
         load() {
-            BdApi.showConfirmationModal(
+            BdApi.UI.showConfirmationModal(
                 'Library Missing',
                 `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`,
                 {
@@ -99,14 +99,19 @@ if (!global.ZeresPluginLibrary) {
 /* eslint-enable max-len, global-require, consistent-return, no-promise-executor-return, import/no-unresolved */
 
 module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
-    const { BdApi } = window;
-    const { DiscordModules, Logger, Toasts } = window.ZLibrary;
+    const { Data, DOM, UI } = window.BdApi;
+    const { onRemoved } = DOM;
+    const { showConfirmationModal } = UI;
+
+    const {
+        DiscordModules, Logger, Toasts,
+    } = window.ZLibrary;
     const {
         React, GuildStore, RelationshipStore, UserStore,
     } = DiscordModules;
 
-    BdApi.injectCSS('RemovedConnectionAlerts', `
-    .trackerHistoryContainer {
+    DOM.addStyle('RemovedConnectionAlerts', `
+    .rcaHistoryContainer {
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
@@ -114,7 +119,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         overflow: auto;
         max-height: 75vh;
     }
-    .trackerHistoryItem { /* avatar + info */
+    .rcaHistoryItem {
         display: flex;
         flex-direction: row;
         justify-content: flex-start;
@@ -124,21 +129,21 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         border-radius: 5px; */
         margin: 1px;
     }
-    .trackerHistoryAvatar {
+    .rcaHistoryAvatar {
         width: 48px;
         height: 48px;
         border-radius: 50%;
         border: 3px solid var(--header-primary);
         margin-right: 6px;
     }
-    .trackerHistoryInfo {
+    .rcaHistoryInfo {
         display: flex;
         flex-direction: column;
         justify-content: center;
         gap: 4px;
         color: var(--header-primary);
     }
-    .trackerHistoryHeader {
+    .rcaHistoryHeader {
         font-size: 1.1rem;
         font-weight: 500;
         color: var(--header-primary);
@@ -151,7 +156,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     let recentRemovedData;
 
     const getSavedData = () => {
-        const savedData = BdApi.loadData('RemovedConnectionAlerts', 'savedData');
+        const savedData = Data.load('RemovedConnectionAlerts', 'savedData');
         if (savedData === undefined) return undefined;
 
         const currentSavedDataInterpret = {
@@ -177,7 +182,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             removedFriendHistory: currentSavedData.removedFriendHistory,
             removedGuildHistory: currentSavedData.removedGuildHistory,
         };
-        return BdApi.saveData('RemovedConnectionAlerts', 'savedData', currentSavedDataSnapshot);
+        return Data.save('RemovedConnectionAlerts', 'savedData', currentSavedDataSnapshot);
     };
 
     const getFriendsList = () => {
@@ -332,14 +337,14 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         avatarURL = 'https://cdn.discordapp.com/embed/avatars/0.png',
         serverName = 'error', ownerName = '', removedDate = '',
     }) => React.createElement('div', {
-        className: 'trackerHistoryItem',
+        className: 'rcaHistoryItem',
     }, React.createElement('img', {
         src: avatarURL,
-        className: 'trackerHistoryAvatar',
+        className: 'rcaHistoryAvatar',
     }), React.createElement(
         'div',
         {
-            className: 'trackerHistoryInfo',
+            className: 'rcaHistoryInfo',
         },
         React.createElement('h4', null, serverName),
         React.createElement('h4', null, `Owner: ${ownerName}`),
@@ -351,12 +356,12 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         friendName = '',
         removedDate = '',
     }) => React.createElement('div', {
-        className: 'trackerHistoryItem',
+        className: 'rcaHistoryItem',
     }, React.createElement('img', {
         src: avatarURL,
-        className: 'trackerHistoryAvatar',
+        className: 'rcaHistoryAvatar',
     }), React.createElement('div', {
-        className: 'trackerHistoryInfo',
+        className: 'rcaHistoryInfo',
     }, React.createElement('h4', null, friendName), React.createElement('h4', null, `Removed at: ${removedDate}`)));
 
     const createRecentServerEntries = (removedGuilds = []) => {
@@ -396,20 +401,20 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const openHistoryWindow = ({ removedFriends = [], removedGuilds = [] }) => {
         // const removedDate = "Removed at: " + new Date().toLocaleString("ja-JP", { timeZoneName: "short" });
-        // const element =  <div className="trackerHistoryContainer">
-        //         <h3 className="trackerHistoryHeader">Recently removed servers</h3>
-        //         <div className="trackerHistoryItem">
-        //             <img src="https://cdn.discordapp.com/icons/753117788440231996/a_6602db2aa9f01f1a4ef911363f1a5592.gif" className="trackerHistoryAvatar"/>
-        //             <div className="trackerHistoryInfo">
+        // const element =  <div className="rcaHistoryContainer">
+        //         <h3 className="rcaHistoryHeader">Recently removed servers</h3>
+        //         <div className="rcaHistoryItem">
+        //             <img src="https://cdn.discordapp.com/icons/753117788440231996/a_6602db2aa9f01f1a4ef911363f1a5592.gif" className="rcaHistoryAvatar"/>
+        //             <div className="rcaHistoryInfo">
         //                 <h4>Ame</h4>
         //                 <h4>Owner: ame#1423</h4>
         //                 <h4>{removedDate}</h4>
         //             </div>
         //         </div>
-        //         <h3 className="trackerHistoryHeader">History of removed friends</h3>
-        //         <div className="trackerHistoryItem">
-        //             <img src="https://cdn.discordapp.com/icons/753117788440231996/a_6602db2aa9f01f1a4ef911363f1a5592.gif" className="trackerHistoryAvatar"/>
-        //             <div className="trackerHistoryInfo">
+        //         <h3 className="rcaHistoryHeader">History of removed friends</h3>
+        //         <div className="rcaHistoryItem">
+        //             <img src="https://cdn.discordapp.com/icons/753117788440231996/a_6602db2aa9f01f1a4ef911363f1a5592.gif" className="rcaHistoryAvatar"/>
+        //             <div className="rcaHistoryInfo">
         //                 <h4>ame#1423</h4>
         //                 <h4>{removedDate}</h4>
         //             </div>
@@ -441,21 +446,21 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         const element = React.createElement(
             'div',
             {
-                className: 'trackerHistoryContainer',
+                className: 'rcaHistoryContainer',
             },
             React.createElement('h3', {
-                className: 'trackerHistoryHeader',
+                className: 'rcaHistoryHeader',
             }, 'Recently removed servers'),
             ...testServerArray,
             createRecentServerEntries(removedGuilds),
             React.createElement('h3', {
-                className: 'trackerHistoryHeader',
+                className: 'rcaHistoryHeader',
             }, 'Recently removed friends'),
             ...testFriendArray,
             createRecentFriendEntries(removedFriends),
         );
 
-        BdApi.showConfirmationModal('ConfirmationTracker', element, {
+        showConfirmationModal('RemovedConnectionAlerts', element, {
             confirmText: 'Okay',
             cancelText: 'Update cache',
             onConfirm: () => {},
@@ -489,7 +494,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             serverList.append(myButton);
 
             // This part re-adds it when removed
-            BdApi.onRemoved(myButton, () => {
+            onRemoved(myButton, () => {
                 serverList.append(myButton);
             });
         },
