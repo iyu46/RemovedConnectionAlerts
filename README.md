@@ -8,8 +8,14 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
 
 - proper UI button
 
-- user IDs per save
+- separate UI into recent and history
+    - hide history under a shade if recent is visible
+    - ensure both are sorted by date
+
+- UI to delete a friend or server from recorded history
 
 - interval checking? check resource use
 
-- confirm stop cleanup
+- confirm stop() cleanup
+
+- auto update fetcher

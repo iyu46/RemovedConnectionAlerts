@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.5.1
+ * @version 0.5.2
  * @description Keep track which friends and servers remove you
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -42,12 +42,19 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.5.1',
+        version: '0.5.2',
         description: 'Keep track which friends and servers remove you',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
+        {
+            title: '0.5.2',
+            type: 'improved',
+            items: [
+                'Added user id in config file name for multi-user support',
+            ],
+        },
         {
             title: '0.5.1',
             type: 'added',
@@ -155,8 +162,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     let currentSavedData;
     let recentRemovedData;
 
-    const getSavedData = () => {
-        const savedData = Data.load('RemovedConnectionAlerts', 'savedData');
+    const getCurrentUserId = () => UserStore.getCurrentUser().id;
+
+    const getSavedData = (currentUserId) => {
+        const savedData = Data.load(`RemovedConnectionAlerts_${currentUserId}`, 'savedData');
         if (savedData === undefined) return undefined;
 
         const currentSavedDataInterpret = {
@@ -173,7 +182,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return currentSavedDataInterpret;
     };
 
-    const setSavedData = () => {
+    const setSavedData = (currentUserId) => {
         const currentSavedDataSnapshot = {
             friendCache: currentSavedData.friendCache,
             guildCache: currentSavedData.guildCache,
@@ -182,7 +191,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             removedFriendHistory: currentSavedData.removedFriendHistory,
             removedGuildHistory: currentSavedData.removedGuildHistory,
         };
-        return Data.save('RemovedConnectionAlerts', 'savedData', currentSavedDataSnapshot);
+        return Data.save(`RemovedConnectionAlerts_${currentUserId}`, 'savedData', currentSavedDataSnapshot);
     };
 
     const getFriendsList = () => {
@@ -248,7 +257,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     };
 
     const initializeCurrentSavedData = (currentUserId) => {
-        const savedDataInFile = getSavedData();
+        const savedDataInFile = getSavedData(currentUserId);
         console.log(savedDataInFile);
         const savedData = {
             friendCache: [],
@@ -268,7 +277,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         }
     };
 
-    const compareAndUpdateCurrentSavedData = () => {
+    const compareAndUpdateCurrentSavedData = (currentUserId) => {
         const removedFriends = [];
         const removedGuilds = [];
         try {
@@ -313,7 +322,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             currentSavedData.guildCacheSet = guilds.guildsSet;
             currentSavedData.removedFriendHistory.push(...removedFriends);
             currentSavedData.removedGuildHistory.push(...removedGuilds);
-            setSavedData();
+            setSavedData(currentUserId);
 
             const logStringFriends = `${removedFriends.length} new removed friends`;
             const logStringGuilds = `${removedGuilds.length} new removed guilds`;
@@ -466,7 +475,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             onConfirm: () => {},
             onCancel: () => {
                 try {
-                    const res = compareAndUpdateCurrentSavedData();
+                    const res = compareAndUpdateCurrentSavedData(getCurrentUserId());
                     console.dir(currentSavedData);
                     console.dir(res);
                     Toasts.success('Updated cache successfully!');
@@ -484,7 +493,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         getVersion() { return config.info.version; },
         start() {
             Logger.info(config.info.name, `Initializing version ${config.info.version}...`);
-            initializeCurrentSavedData();
+            initializeCurrentSavedData(getCurrentUserId());
 
             // This part adds our button
             myButton = document.createElement('button');
