@@ -1,0 +1,24 @@
+{
+  "name": "connectiontracker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "pepela.plugin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iyu46/ConnectionTracker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iyu46/ConnectionTracker/issues"
+  },
+  "homepage": "https://github.com/iyu46/ConnectionTracker#readme",
+  "devDependencies": {
+    "eslint": "^8.30.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0"
+  }
+}
