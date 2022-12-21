@@ -6,9 +6,6 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
 
 ## todo:
 
-- proper UI button
-    - done, now keep it on the UI with observers
-
 - separate UI into recent and history
     - hide history under a shade if recent is visible
     - ensure both are sorted by date
