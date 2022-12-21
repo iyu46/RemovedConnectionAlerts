@@ -511,51 +511,56 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return () => { observer.disconnect(); };
     };
 
+    const setupButtonUI = (getChannelHeaderInboxIcon) => {
+        rcaModalBtn = document.createElement('div');
+        const rcaModalBtnStyle = {
+            class: 'iconWrapper-2awDjA clickable-ZD7xvu',
+            role: 'button',
+            'aria-label': 'Removed Connection History',
+            tabindex: '0',
+        };
+        Object.entries(rcaModalBtnStyle).forEach(([key, value]) => rcaModalBtn.setAttribute(key, value));
+        const rcaModalBtnIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const rcaModalBtnIconStyle = {
+            x: '0',
+            y: '0',
+            class: 'icon-2xnN2Y',
+            'aria-hidden': 'true',
+            role: 'img',
+            width: '24',
+            height: '24',
+            viewBox: '0 0 16 16',
+        };
+        Object.entries(rcaModalBtnIconStyle).forEach(([key, value]) => rcaModalBtnIcon.setAttribute(key, value));
+        const rcaModalBtnPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        rcaModalBtnPath.setAttribute('fill', 'currentColor');
+        // eslint-disable-next-line max-len
+        rcaModalBtnPath.setAttribute('d', 'M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z');
+        rcaModalBtn.addEventListener('click', () => openHistoryWindow(recentRemovedData));
+
+        rcaModalBtnIcon.appendChild(rcaModalBtnPath);
+        rcaModalBtn.appendChild(rcaModalBtnIcon);
+        const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
+        channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
+    };
+
     return ({
         getName() { return config.info.name; },
         getAuthor() { return config.info.authors.map((a) => a.name).join(', '); },
         getDescription() { return config.info.description; },
         getVersion() { return config.info.version; },
         start() {
-            Logger.info(config.info.name, `Initializing version ${config.info.version}...`);
+            Logger.info(config.info.name, `version ${config.info.version} has started.`);
             initializeCurrentSavedData(getCurrentUserId());
 
+            // eslint-disable-next-line max-len
             const getChannelHeaderInboxIcon = () => document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)').previousSibling;
 
-            rcaModalBtn = document.createElement('div');
-            const rcaModalBtnStyle = {
-                class: 'iconWrapper-2awDjA clickable-ZD7xvu',
-                role: 'button',
-                'aria-label': 'Removed Connection History',
-                tabindex: '0',
-            };
-            Object.entries(rcaModalBtnStyle).forEach(([key, value]) => rcaModalBtn.setAttribute(key, value));
-            const rcaModalBtnIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            const rcaModalBtnIconStyle = {
-                x: '0',
-                y: '0',
-                class: 'icon-2xnN2Y',
-                'aria-hidden': 'true',
-                role: 'img',
-                width: '24',
-                height: '24',
-                viewBox: '0 0 16 16',
-            };
-            Object.entries(rcaModalBtnIconStyle).forEach(([key, value]) => rcaModalBtnIcon.setAttribute(key, value));
-            const rcaModalBtnPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            rcaModalBtnPath.setAttribute('fill', 'currentColor');
-            // eslint-disable-next-line max-len
-            rcaModalBtnPath.setAttribute('d', 'M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z');
-            rcaModalBtn.addEventListener('click', () => openHistoryWindow(recentRemovedData));
-
-            rcaModalBtnIcon.appendChild(rcaModalBtnPath);
-            rcaModalBtn.appendChild(rcaModalBtnIcon);
-            let channelHeaderInboxIcon = getChannelHeaderInboxIcon();
-            channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
+            setupButtonUI(getChannelHeaderInboxIcon);
 
             // This part re-adds it when removed
             rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
-                channelHeaderInboxIcon = getChannelHeaderInboxIcon();
+                const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
                 channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
             });
         },
