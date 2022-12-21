@@ -52,8 +52,10 @@ const config = {
             title: '0.5.3',
             type: 'added',
             items: [
+                'Added automatic checking through dispatcher',
                 'Added proper UI button with icon next to Inbox (thanks programmer2514!)',
                 'Keep UI button on the UI via observer',
+                'Added tooltip on hover for UI button',
             ],
         },
         {
@@ -115,19 +117,29 @@ if (!global.ZeresPluginLibrary) {
 
 module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const { Data, UI } = window.BdApi;
-    const { showConfirmationModal } = UI;
+    const { createTooltip, showConfirmationModal } = UI;
 
     const {
         DiscordModules, DOMTools, Logger, Toasts,
     } = window.ZLibrary;
     const {
-        React, GuildStore, RelationshipStore, UserStore,
+        React, Dispatcher, GuildStore, RelationshipStore, UserStore,
     } = DiscordModules;
 
+    const subscribeTargets = [
+        'FRIEND_REQUEST_ACCEPTED',
+        'RELATIONSHIP_ADD',
+        'RELATIONSHIP_UPDATE',
+        'RELATIONSHIP_REMOVE',
+        'GUILD_CREATE',
+        'GUILD_UPDATE',
+        'GUILD_DELETE',
+    ];
     let rcaModalBtn;
     let rcaModalBtnRemoveObserver;
     let currentSavedData;
     let recentRemovedData;
+    let isUpdating = false;
 
     DOMTools.addStyle('RemovedConnectionAlerts', `
     .rcaHistoryContainer {
@@ -184,8 +196,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             removedGuildHistory: savedData.removedGuildHistory,
         };
         recentRemovedData = { removedFriends: [], removedGuilds: [] };
-        recentRemovedData.removedFriends = savedData.removedFriendHistory;
-        recentRemovedData.removedGuilds = savedData.removedGuildHistory; // !!! TESTING: REMOVE THIS
         return currentSavedDataInterpret;
     };
 
@@ -285,6 +295,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     };
 
     const compareAndUpdateCurrentSavedData = (currentUserId) => {
+        if (isUpdating === true) return null;
+        isUpdating = true;
         const removedFriends = [];
         const removedGuilds = [];
         try {
@@ -342,6 +354,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         } catch (e) {
             Logger.stacktrace(config.info.name, 'Exception occurred while updating cache', e);
             throw e;
+        } finally {
+            isUpdating = false;
         }
 
         recentRemovedData = { removedFriends, removedGuilds }; // TESTING i think remove this?
@@ -467,13 +481,15 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             React.createElement('h3', {
                 className: 'rcaHistoryHeader',
             }, 'Recently removed servers'),
-            ...testServerArray,
+            // ...testServerArray,
             createRecentServerEntries(removedGuilds),
+            createRecentServerEntries(currentSavedData.removedGuildHistory),
             React.createElement('h3', {
                 className: 'rcaHistoryHeader',
             }, 'Recently removed friends'),
-            ...testFriendArray,
+            // ...testFriendArray,
             createRecentFriendEntries(removedFriends),
+            createRecentFriendEntries(currentSavedData.removedFriendHistory),
         );
 
         showConfirmationModal('RemovedConnectionAlerts', element, {
@@ -542,6 +558,15 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         rcaModalBtn.appendChild(rcaModalBtnIcon);
         const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
         channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
+        UI.createTooltip(rcaModalBtn, 'Removed Connection History', { side: 'bottom' });
+    };
+
+    const update = () => {
+        const res = compareAndUpdateCurrentSavedData(getCurrentUserId());
+        if (res && (res.removedFriends.length > 0 || res.removedGuilds.length > 0)) {
+            openHistoryWindow(res);
+            console.dir(res);
+        }
     };
 
     return ({
@@ -558,16 +583,19 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
             setupButtonUI(getChannelHeaderInboxIcon);
 
-            // This part re-adds it when removed
             rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
                 const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
                 channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
             });
+
+            subscribeTargets.forEach((e) => Dispatcher.subscribe(e, update));
         },
         stop() {
             rcaModalBtnRemoveObserver();
             rcaModalBtn.remove();
             rcaModalBtn = undefined;
+
+            subscribeTargets.forEach((e) => Dispatcher.unsubscribe(e, update));
         },
     });
 };
