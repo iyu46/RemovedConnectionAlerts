@@ -2,8 +2,8 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.5.2
- * @description Keep track which friends and servers remove you
+ * @version 0.5.3
+ * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
  */
@@ -42,12 +42,19 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.5.2',
-        description: 'Keep track which friends and servers remove you',
+        version: '0.5.3',
+        description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
+        {
+            title: '0.5.3',
+            type: 'added',
+            items: [
+                'Added proper UI button with icon next to Inbox (thanks programmer2514!)',
+            ],
+        },
         {
             title: '0.5.2',
             type: 'improved',
@@ -106,18 +113,21 @@ if (!global.ZeresPluginLibrary) {
 /* eslint-enable max-len, global-require, consistent-return, no-promise-executor-return, import/no-unresolved */
 
 module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
-    const { Data, DOM, UI } = window.BdApi;
-    const { onRemoved } = DOM;
+    const { Data, UI } = window.BdApi;
     const { showConfirmationModal } = UI;
 
     const {
-        DiscordModules, Logger, Toasts,
+        DiscordModules, DOMTools, Logger, Toasts,
     } = window.ZLibrary;
     const {
         React, GuildStore, RelationshipStore, UserStore,
     } = DiscordModules;
 
-    DOM.addStyle('RemovedConnectionAlerts', `
+    let rcaModalButton;
+    let currentSavedData;
+    let recentRemovedData;
+
+    DOMTools.addStyle('RemovedConnectionAlerts', `
     .rcaHistoryContainer {
         display: flex;
         flex-direction: column;
@@ -126,7 +136,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         overflow: auto;
         max-height: 75vh;
     }
-    .rcaHistoryItem {
+    .rcaHistoryItem { /* avatar + item */
         display: flex;
         flex-direction: row;
         justify-content: flex-start;
@@ -155,12 +165,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         font-weight: 500;
         color: var(--header-primary);
     }
+    .rcaModalButtonIcon {
+        color: var(--mainColor);
+        fill: var(--mainColor);
+    }
     `);
-
-    const serverList = document.querySelector('.tree-3agP2X > div > div[aria-label]');
-    let myButton;
-    let currentSavedData;
-    let recentRemovedData;
 
     const getCurrentUserId = () => UserStore.getCurrentUser().id;
 
@@ -495,21 +504,47 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             Logger.info(config.info.name, `Initializing version ${config.info.version}...`);
             initializeCurrentSavedData(getCurrentUserId());
 
-            // This part adds our button
-            myButton = document.createElement('button');
-            myButton.textContent = 'Click me!';
-            myButton.addEventListener('click', () => openHistoryWindow(recentRemovedData));
+            const channelHeaderInboxIcon = document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)').previousSibling;
 
-            serverList.append(myButton);
+            rcaModalButton = document.createElement('div');
+            const rcaModalButtonStyle = {
+                class: 'iconWrapper-2awDjA clickable-ZD7xvu',
+                role: 'button',
+                'aria-label': 'Removed Connection History',
+                tabindex: '0',
+            };
+            Object.entries(rcaModalButtonStyle).forEach(([key, value]) => rcaModalButton.setAttribute(key, value));
+            const rcaModalButtonIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            // rcaModalButtonIcon.setAttribute("class", 'icon-2xnN2Y rcaModalButtonIcon');
+            const rcaModalButtonIconStyle = {
+                x: '0',
+                y: '0',
+                class: 'icon-2xnN2Y',
+                'aria-hidden': 'true',
+                role: 'img',
+                width: '24',
+                height: '24',
+                viewBox: '0 0 16 16',
+            };
+            Object.entries(rcaModalButtonIconStyle).forEach(([key, value]) => rcaModalButtonIcon.setAttribute(key, value));
+            const rcaModalButtonPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            rcaModalButtonPath.setAttribute('fill', 'currentColor');
+            // eslint-disable-next-line max-len
+            rcaModalButtonPath.setAttribute('d', 'M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z');
+            rcaModalButton.addEventListener('click', () => openHistoryWindow(recentRemovedData));
+
+            rcaModalButtonIcon.appendChild(rcaModalButtonPath);
+            rcaModalButton.appendChild(rcaModalButtonIcon);
+            channelHeaderInboxIcon.parentElement.insertBefore(rcaModalButton, channelHeaderInboxIcon);
 
             // This part re-adds it when removed
-            onRemoved(myButton, () => {
-                serverList.append(myButton);
+            DOMTools.onRemoved(rcaModalButton, () => {
+                channelHeaderInboxIcon.parentElement.insertBefore(rcaModalButton, channelHeaderInboxIcon);
             });
         },
         stop() {
-            myButton.remove();
-            myButton = undefined;
+            rcaModalButton.remove();
+            rcaModalButton = undefined;
         },
     });
 };

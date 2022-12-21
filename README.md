@@ -7,6 +7,7 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
 ## todo:
 
 - proper UI button
+    - done, now keep it on the UI with observers
 
 - separate UI into recent and history
     - hide history under a shade if recent is visible
@@ -14,7 +15,7 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
 
 - UI to delete a friend or server from recorded history
 
-- interval checking? check resource use
+- interval checking? check resource use, observer
 
 - confirm stop() cleanup
 
