@@ -53,6 +53,7 @@ const config = {
             type: 'added',
             items: [
                 'Added proper UI button with icon next to Inbox (thanks programmer2514!)',
+                'Keep UI button on the UI via observer',
             ],
         },
         {
@@ -123,7 +124,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         React, GuildStore, RelationshipStore, UserStore,
     } = DiscordModules;
 
-    let rcaModalButton;
+    let rcaModalBtn;
+    let rcaModalBtnRemoveObserver;
     let currentSavedData;
     let recentRemovedData;
 
@@ -491,6 +493,24 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         });
     };
 
+    // original code from https://github.com/BetterDiscord/BetterDiscord/blob/9e0f274b504d155b73c4c3148df5173bd8fad3bc/renderer/src/modules/dommanager.js#L182
+    const onRemovedPersistent = (node, callback) => {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((_, m) => {
+                const mutation = mutations[m];
+                const nodes = Array.from(mutation.removedNodes);
+                const directMatch = nodes.indexOf(node) > -1;
+                const parentMatch = nodes.some((parent) => parent.contains(node));
+                if (directMatch || parentMatch) {
+                    callback();
+                }
+            });
+        });
+
+        observer.observe(document.body, { subtree: true, childList: true });
+        return () => { observer.disconnect(); };
+    };
+
     return ({
         getName() { return config.info.name; },
         getAuthor() { return config.info.authors.map((a) => a.name).join(', '); },
@@ -500,19 +520,18 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             Logger.info(config.info.name, `Initializing version ${config.info.version}...`);
             initializeCurrentSavedData(getCurrentUserId());
 
-            const channelHeaderInboxIcon = document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)').previousSibling;
+            const getChannelHeaderInboxIcon = () => document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)').previousSibling;
 
-            rcaModalButton = document.createElement('div');
-            const rcaModalButtonStyle = {
+            rcaModalBtn = document.createElement('div');
+            const rcaModalBtnStyle = {
                 class: 'iconWrapper-2awDjA clickable-ZD7xvu',
                 role: 'button',
                 'aria-label': 'Removed Connection History',
                 tabindex: '0',
             };
-            Object.entries(rcaModalButtonStyle).forEach(([key, value]) => rcaModalButton.setAttribute(key, value));
-            const rcaModalButtonIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            // rcaModalButtonIcon.setAttribute("class", 'icon-2xnN2Y rcaModalButtonIcon');
-            const rcaModalButtonIconStyle = {
+            Object.entries(rcaModalBtnStyle).forEach(([key, value]) => rcaModalBtn.setAttribute(key, value));
+            const rcaModalBtnIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            const rcaModalBtnIconStyle = {
                 x: '0',
                 y: '0',
                 class: 'icon-2xnN2Y',
@@ -522,25 +541,28 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 height: '24',
                 viewBox: '0 0 16 16',
             };
-            Object.entries(rcaModalButtonIconStyle).forEach(([key, value]) => rcaModalButtonIcon.setAttribute(key, value));
-            const rcaModalButtonPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            rcaModalButtonPath.setAttribute('fill', 'currentColor');
+            Object.entries(rcaModalBtnIconStyle).forEach(([key, value]) => rcaModalBtnIcon.setAttribute(key, value));
+            const rcaModalBtnPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            rcaModalBtnPath.setAttribute('fill', 'currentColor');
             // eslint-disable-next-line max-len
-            rcaModalButtonPath.setAttribute('d', 'M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z');
-            rcaModalButton.addEventListener('click', () => openHistoryWindow(recentRemovedData));
+            rcaModalBtnPath.setAttribute('d', 'M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z');
+            rcaModalBtn.addEventListener('click', () => openHistoryWindow(recentRemovedData));
 
-            rcaModalButtonIcon.appendChild(rcaModalButtonPath);
-            rcaModalButton.appendChild(rcaModalButtonIcon);
-            channelHeaderInboxIcon.parentElement.insertBefore(rcaModalButton, channelHeaderInboxIcon);
+            rcaModalBtnIcon.appendChild(rcaModalBtnPath);
+            rcaModalBtn.appendChild(rcaModalBtnIcon);
+            let channelHeaderInboxIcon = getChannelHeaderInboxIcon();
+            channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
 
             // This part re-adds it when removed
-            DOMTools.onRemoved(rcaModalButton, () => {
-                channelHeaderInboxIcon.parentElement.insertBefore(rcaModalButton, channelHeaderInboxIcon);
+            rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
+                channelHeaderInboxIcon = getChannelHeaderInboxIcon();
+                channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
             });
         },
         stop() {
-            rcaModalButton.remove();
-            rcaModalButton = undefined;
+            rcaModalBtnRemoveObserver();
+            rcaModalBtn.remove();
+            rcaModalBtn = undefined;
         },
     });
 };
