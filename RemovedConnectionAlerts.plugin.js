@@ -165,10 +165,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         font-weight: 500;
         color: var(--header-primary);
     }
-    .rcaModalButtonIcon {
-        color: var(--mainColor);
-        fill: var(--mainColor);
-    }
     `);
 
     const getCurrentUserId = () => UserStore.getCurrentUser().id;
