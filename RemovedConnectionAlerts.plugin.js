@@ -120,7 +120,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const { createTooltip, showConfirmationModal } = UI;
 
     const {
-        DiscordModules, DOMTools, Logger, Toasts,
+        DiscordModules, DOMTools, Logger, Utilities,
     } = window.ZLibrary;
     const {
         React, Dispatcher, GuildStore, RelationshipStore, UserStore,
@@ -138,7 +138,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     let rcaModalBtn;
     let rcaModalBtnRemoveObserver;
     let currentSavedData;
-    let recentRemovedData;
     let isUpdating = false;
 
     DOMTools.addStyle('RemovedConnectionAlerts', `
@@ -195,7 +194,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             removedFriendHistory: savedData.removedFriendHistory,
             removedGuildHistory: savedData.removedGuildHistory,
         };
-        recentRemovedData = { removedFriends: [], removedGuilds: [] };
+
         return currentSavedDataInterpret;
     };
 
@@ -287,7 +286,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
         if (savedDataInFile === undefined) {
             currentSavedData = savedData;
-            recentRemovedData = { removedFriends: [], removedGuilds: [] };
             populateEmptyCurrentSavedData();
         } else {
             currentSavedData = savedDataInFile;
@@ -358,8 +356,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             isUpdating = false;
         }
 
-        recentRemovedData = { removedFriends, removedGuilds }; // TESTING i think remove this?
-
         return { removedFriends, removedGuilds };
     };
 
@@ -403,7 +399,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 avatarURL,
                 serverName: g.name,
                 ownerName: g.owner,
-                removedDate: g.timeRemoved.toLocaleString('ja-JP', {
+                removedDate: new Date(g.timeRemoved).toLocaleString('ja-JP', {
                     timeZoneName: 'short',
                 }),
             });
@@ -420,7 +416,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             return createFriendLogEntry({
                 avatarURL,
                 friendName: f.tag,
-                removedDate: f.timeRemoved.toLocaleString('ja-JP', {
+                removedDate: new Date(f.timeRemoved).toLocaleString('ja-JP', {
                     timeZoneName: 'short',
                 }),
             });
@@ -429,67 +425,44 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return removedFriendsAsElements;
     };
 
-    const openHistoryWindow = ({ removedFriends = [], removedGuilds = [] }) => {
-        // const removedDate = "Removed at: " + new Date().toLocaleString("ja-JP", { timeZoneName: "short" });
-        // const element =  <div className="rcaHistoryContainer">
-        //         <h3 className="rcaHistoryHeader">Recently removed servers</h3>
-        //         <div className="rcaHistoryItem">
-        //             <img src="https://cdn.discordapp.com/icons/753117788440231996/a_6602db2aa9f01f1a4ef911363f1a5592.gif" className="rcaHistoryAvatar"/>
-        //             <div className="rcaHistoryInfo">
-        //                 <h4>Ame</h4>
-        //                 <h4>Owner: ame#1423</h4>
-        //                 <h4>{removedDate}</h4>
-        //             </div>
-        //         </div>
-        //         <h3 className="rcaHistoryHeader">History of removed friends</h3>
-        //         <div className="rcaHistoryItem">
-        //             <img src="https://cdn.discordapp.com/icons/753117788440231996/a_6602db2aa9f01f1a4ef911363f1a5592.gif" className="rcaHistoryAvatar"/>
-        //             <div className="rcaHistoryInfo">
-        //                 <h4>ame#1423</h4>
-        //                 <h4>{removedDate}</h4>
-        //             </div>
-        //         </div>
-        //     </div>;
+    const openHistoryWindow = () => {
+        const recentFriendHistory = [...currentSavedData.removedFriendHistory];
+        const recentGuildHistory = [...currentSavedData.removedGuildHistory];
+        Utilities.stableSort(recentFriendHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
+        Utilities.stableSort(recentGuildHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
 
-        const testServerProps = {
-            avatarURL: 'https://cdn.discordapp.com/icons/753117788440231996/a_6602db2aa9f01f1a4ef911363f1a5592.gif', // animated
-            serverName: "Ame's Detective Bureau",
-            ownerName: 'ame#1432',
-            removedDate: new Date().toLocaleString('ja-JP', { timeZoneName: 'short' }),
-        };
+        let friendsMoreThan24HoursIndex = 0;
+        const yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
+        while (friendsMoreThan24HoursIndex < recentFriendHistory.length) {
+            const curr = new Date(recentFriendHistory[friendsMoreThan24HoursIndex].timeRemoved);
+            const currMinus24HoursTimestamp = curr.getTime() - (24 * 60 * 60 * 1000);
+            if (yesterdayTimestamp > currMinus24HoursTimestamp) break;
+            friendsMoreThan24HoursIndex += 1;
+        }
 
-        const testFriendProps = {
-            avatarURL: 'https://cdn.discordapp.com/avatars/309095572336541697/a_21a6f243aca597266811f9bd80aa24b3.webp', // non-animated
-            friendName: 'ame#1432',
-            removedDate: new Date().toLocaleString('ja-JP', { timeZoneName: 'short' }),
-        };
+        let recentFriends = [];
+        let olderFriends = [];
+        recentFriends = recentFriendHistory.slice(0, friendsMoreThan24HoursIndex + 1);
 
-        const testFriend2Props = {
-            avatarURL: undefined, // empty
-            friendName: 'ame#1432',
-            removedDate: new Date().toLocaleString('ja-JP', { timeZoneName: 'short' }),
-        };
-
-        const testServerArray = [createServerLogEntry(testServerProps), createServerLogEntry(testServerProps)];
-        const testFriendArray = [createFriendLogEntry(testFriendProps), createFriendLogEntry(testFriend2Props)];
+        // if there is a history and the loop didn't repeat till the end of the array (found an element older than 24 hours)
+        if (recentFriendHistory.length && (friendsMoreThan24HoursIndex !== recentFriendHistory.length - 1)) {
+            olderFriends = recentFriendHistory.slice(friendsMoreThan24HoursIndex + 1);
+        }
 
         const element = React.createElement(
             'div',
             {
                 className: 'rcaHistoryContainer',
             },
-            React.createElement('h3', {
+            recentFriendHistory.length ? React.createElement('h3', {
                 className: 'rcaHistoryHeader',
-            }, 'Recently removed servers'),
-            // ...testServerArray,
-            createRecentServerEntries(removedGuilds),
-            createRecentServerEntries(currentSavedData.removedGuildHistory),
-            React.createElement('h3', {
+            }, 'Recently removed friends') : null,
+            createRecentFriendEntries(recentFriends),
+            createRecentFriendEntries(olderFriends), // TODO: separate
+            recentGuildHistory.length ? React.createElement('h3', {
                 className: 'rcaHistoryHeader',
-            }, 'Recently removed friends'),
-            // ...testFriendArray,
-            createRecentFriendEntries(removedFriends),
-            createRecentFriendEntries(currentSavedData.removedFriendHistory),
+            }, 'Recently removed servers') : null,
+            createRecentServerEntries(recentGuildHistory),
         );
 
         showConfirmationModal('RemovedConnectionAlerts', element, {
@@ -501,9 +474,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                     const res = compareAndUpdateCurrentSavedData(getCurrentUserId());
                     console.dir(currentSavedData);
                     console.dir(res);
-                    Toasts.success('Updated cache successfully!');
+                    UI.showToast('Updated cache successfully!', { type: 'success' });
                 } catch (e) {
-                    Toasts.error('Cache failed to update');
+                    UI.showToast('Cache failed to update', { type: 'error' });
                 }
             },
         });
@@ -527,10 +500,24 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return () => { observer.disconnect(); };
     };
 
-    const setupButtonUI = (getChannelHeaderInboxIcon) => {
+    const insertButtonAtLocationWithStyle = (getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt) => {
+        const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
+        const targetElem = channelHeaderInboxIcon
+        || Array.from(getChannelHeaderInboxIconAlt().children).find(
+            (e) => e.className === 'button-1fGHAH iconWrapper-2awDjA clickable-ZD7xvu',
+        );
+        let rcaModalBtnClassName = 'iconWrapper-2awDjA clickable-ZD7xvu';
+        rcaModalBtnClassName = (channelHeaderInboxIcon)
+            ? rcaModalBtnClassName
+            : `button-1fGHAH ${rcaModalBtnClassName}`;
+        rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
+        targetElem.parentElement.insertBefore(rcaModalBtn, targetElem);
+    };
+
+    const setupButtonUI = (getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt) => {
         rcaModalBtn = document.createElement('div');
         const rcaModalBtnStyle = {
-            class: 'iconWrapper-2awDjA clickable-ZD7xvu',
+            // class: 'iconWrapper-2awDjA clickable-ZD7xvu',
             role: 'button',
             'aria-label': 'Removed Connection History',
             tabindex: '0',
@@ -552,19 +539,19 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         rcaModalBtnPath.setAttribute('fill', 'currentColor');
         // eslint-disable-next-line max-len
         rcaModalBtnPath.setAttribute('d', 'M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z');
-        rcaModalBtn.addEventListener('click', () => openHistoryWindow(recentRemovedData));
+        rcaModalBtn.addEventListener('click', () => openHistoryWindow());
 
         rcaModalBtnIcon.appendChild(rcaModalBtnPath);
         rcaModalBtn.appendChild(rcaModalBtnIcon);
-        const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
-        channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
-        UI.createTooltip(rcaModalBtn, 'Removed Connection History', { side: 'bottom' });
+
+        insertButtonAtLocationWithStyle(getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt);
+        createTooltip(rcaModalBtn, 'Removed History', { side: 'bottom' });
     };
 
     const update = () => {
         const res = compareAndUpdateCurrentSavedData(getCurrentUserId());
         if (res && (res.removedFriends.length > 0 || res.removedGuilds.length > 0)) {
-            openHistoryWindow(res);
+            openHistoryWindow();
             console.dir(res);
         }
     };
@@ -579,13 +566,13 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             initializeCurrentSavedData(getCurrentUserId());
 
             // eslint-disable-next-line max-len
-            const getChannelHeaderInboxIcon = () => document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)').previousSibling;
+            const getChannelHeaderInboxIcon = () => document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)')?.previousSibling;
+            const getChannelHeaderInboxIconAlt = () => document.querySelector('.toolbar-3_r2xA');
 
-            setupButtonUI(getChannelHeaderInboxIcon);
+            setupButtonUI(getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt);
 
             rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
-                const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
-                channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
+                insertButtonAtLocationWithStyle(getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt);
             });
 
             subscribeTargets.forEach((e) => Dispatcher.subscribe(e, update));
