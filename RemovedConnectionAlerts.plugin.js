@@ -538,14 +538,14 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         const rcaModalBtnPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         rcaModalBtnPath.setAttribute('fill', 'currentColor');
         // eslint-disable-next-line max-len
-        rcaModalBtnPath.setAttribute('d', 'M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z');
+        rcaModalBtnPath.setAttribute('d', 'M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm6.146-2.854a.5.5 0 0 1 .708 0L14 6.293l1.146-1.147a.5.5 0 0 1 .708.708L14.707 7l1.147 1.146a.5.5 0 0 1-.708.708L14 7.707l-1.146 1.147a.5.5 0 0 1-.708-.708L13.293 7l-1.147-1.146a.5.5 0 0 1 0-.708z');
         rcaModalBtn.addEventListener('click', () => openHistoryWindow());
 
         rcaModalBtnIcon.appendChild(rcaModalBtnPath);
         rcaModalBtn.appendChild(rcaModalBtnIcon);
 
         insertButtonAtLocationWithStyle(getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt);
-        createTooltip(rcaModalBtn, 'Removed History', { side: 'bottom' });
+        createTooltip(rcaModalBtn, 'Removal History', { side: 'bottom' });
     };
 
     const update = () => {
