@@ -56,6 +56,7 @@ const config = {
                 'Added proper UI button with icon next to Inbox (thanks programmer2514!)',
                 'Keep UI button on the UI via observer',
                 'Added tooltip on hover for UI button',
+                'Added chronological sorting when displaying history in modal',
             ],
         },
         {
@@ -139,6 +140,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     let rcaModalBtnRemoveObserver;
     let currentSavedData;
     let isUpdating = false;
+    let hasViewErrorTriggered = false;
+    const isOlderFriendsShadeOpen = false;
+    const isOlderGuildsShadeOpen = false;
 
     DOMTools.addStyle('RemovedConnectionAlerts', `
     .rcaHistoryContainer {
@@ -425,29 +429,41 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return removedFriendsAsElements;
     };
 
+    const createOlderFriendEntries = (removedFriends = []) => {
+        // wrap createRecentFriendEntries and h4 header in a collapsible div?
+    };
+
+    const splitHistoryBasedOnTimeRemoved = (history = [], time = 0) => {
+        let elemsMoreThan24HoursIndex = 0;
+        const yesterdayTimestamp = new Date().getTime() - time;
+        while (elemsMoreThan24HoursIndex < history.length) {
+            const curr = new Date(history[elemsMoreThan24HoursIndex].timeRemoved);
+            const currMinus24HoursTimestamp = curr.getTime() - time;
+            if (yesterdayTimestamp > currMinus24HoursTimestamp) break;
+            elemsMoreThan24HoursIndex += 1;
+        }
+
+        let recentElems = [];
+        let olderElems = [];
+        recentElems = history.slice(0, elemsMoreThan24HoursIndex + 1);
+
+        // if there is a history and the loop didn't repeat till the end of the array (found an element older than 24 hours)
+        if (history.length && (elemsMoreThan24HoursIndex !== history.length - 1)) {
+            olderElems = history.slice(elemsMoreThan24HoursIndex + 1);
+        }
+
+        return { recentElems, olderElems };
+    };
+
     const openHistoryWindow = () => {
         const recentFriendHistory = [...currentSavedData.removedFriendHistory];
         const recentGuildHistory = [...currentSavedData.removedGuildHistory];
         Utilities.stableSort(recentFriendHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
         Utilities.stableSort(recentGuildHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
 
-        let friendsMoreThan24HoursIndex = 0;
-        const yesterdayTimestamp = new Date().getTime() - (24 * 60 * 60 * 1000);
-        while (friendsMoreThan24HoursIndex < recentFriendHistory.length) {
-            const curr = new Date(recentFriendHistory[friendsMoreThan24HoursIndex].timeRemoved);
-            const currMinus24HoursTimestamp = curr.getTime() - (24 * 60 * 60 * 1000);
-            if (yesterdayTimestamp > currMinus24HoursTimestamp) break;
-            friendsMoreThan24HoursIndex += 1;
-        }
-
-        let recentFriends = [];
-        let olderFriends = [];
-        recentFriends = recentFriendHistory.slice(0, friendsMoreThan24HoursIndex + 1);
-
-        // if there is a history and the loop didn't repeat till the end of the array (found an element older than 24 hours)
-        if (recentFriendHistory.length && (friendsMoreThan24HoursIndex !== recentFriendHistory.length - 1)) {
-            olderFriends = recentFriendHistory.slice(friendsMoreThan24HoursIndex + 1);
-        }
+        const DAY_IN_MS = (24 * 60 * 60 * 1000); // TODO: variable?
+        const recentFriends = splitHistoryBasedOnTimeRemoved(recentFriendHistory, DAY_IN_MS);
+        const recentGuilds = splitHistoryBasedOnTimeRemoved(recentGuildHistory, DAY_IN_MS);
 
         const element = React.createElement(
             'div',
@@ -457,12 +473,27 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             recentFriendHistory.length ? React.createElement('h3', {
                 className: 'rcaHistoryHeader',
             }, 'Recently removed friends') : null,
-            createRecentFriendEntries(recentFriends),
-            createRecentFriendEntries(olderFriends), // TODO: separate
+            createRecentFriendEntries(recentFriends.recentElems),
             recentGuildHistory.length ? React.createElement('h3', {
                 className: 'rcaHistoryHeader',
             }, 'Recently removed servers') : null,
-            createRecentServerEntries(recentGuildHistory),
+            createRecentServerEntries(recentGuilds.recentElems),
+            recentFriends.olderElems.length
+                ? [
+                    React.createElement('h4', {
+                        className: 'rcaHistoryHeader',
+                    }, 'History of removed friends'),
+                    ...createRecentFriendEntries(recentFriends.olderElems),
+                ]
+                : null,
+            recentGuilds.olderElems.length
+                ? [
+                    React.createElement('h4', {
+                        className: 'rcaHistoryHeader',
+                    }, 'History of removed guilds'),
+                    ...createRecentServerEntries(recentGuilds.olderElems),
+                ]
+                : null,
         );
 
         showConfirmationModal('RemovedConnectionAlerts', element, {
@@ -500,21 +531,32 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return () => { observer.disconnect(); };
     };
 
-    const insertButtonAtLocationWithStyle = (getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt) => {
-        const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
-        const targetElem = channelHeaderInboxIcon
-        || Array.from(getChannelHeaderInboxIconAlt().children).find(
-            (e) => e.className === 'button-1fGHAH iconWrapper-2awDjA clickable-ZD7xvu',
-        );
-        let rcaModalBtnClassName = 'iconWrapper-2awDjA clickable-ZD7xvu';
-        rcaModalBtnClassName = (channelHeaderInboxIcon)
-            ? rcaModalBtnClassName
-            : `button-1fGHAH ${rcaModalBtnClassName}`;
-        rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
-        targetElem.parentElement.insertBefore(rcaModalBtn, targetElem);
+    // eslint-disable-next-line max-len
+    const getChannelHeaderInboxIcon = () => document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)')?.previousSibling;
+
+    const getChannelHeaderInboxIconAlt = () => document.querySelector('.toolbar-3_r2xA');
+
+    const insertButtonAtLocationWithStyle = () => {
+        try {
+            const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
+            const targetElem = channelHeaderInboxIcon
+            || Array.from(getChannelHeaderInboxIconAlt().children).find(
+                (e) => e.className === 'button-1fGHAH iconWrapper-2awDjA clickable-ZD7xvu',
+            );
+            let rcaModalBtnClassName = 'iconWrapper-2awDjA clickable-ZD7xvu';
+            rcaModalBtnClassName = (channelHeaderInboxIcon)
+                ? rcaModalBtnClassName
+                : `button-1fGHAH ${rcaModalBtnClassName}`;
+            rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
+            targetElem.parentElement.insertBefore(rcaModalBtn, targetElem);
+            hasViewErrorTriggered = false;
+        } catch (e) {
+            Logger.stacktrace(config.info.name, 'View does not contain anchorable elements', e);
+            hasViewErrorTriggered = true;
+        }
     };
 
-    const setupButtonUI = (getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt) => {
+    const setupButtonUI = () => {
         rcaModalBtn = document.createElement('div');
         const rcaModalBtnStyle = {
             // class: 'iconWrapper-2awDjA clickable-ZD7xvu',
@@ -544,7 +586,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         rcaModalBtnIcon.appendChild(rcaModalBtnPath);
         rcaModalBtn.appendChild(rcaModalBtnIcon);
 
-        insertButtonAtLocationWithStyle(getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt);
+        insertButtonAtLocationWithStyle();
         createTooltip(rcaModalBtn, 'Removal History', { side: 'bottom' });
     };
 
@@ -565,14 +607,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             Logger.info(config.info.name, `version ${config.info.version} has started.`);
             initializeCurrentSavedData(getCurrentUserId());
 
-            // eslint-disable-next-line max-len
-            const getChannelHeaderInboxIcon = () => document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)')?.previousSibling;
-            const getChannelHeaderInboxIconAlt = () => document.querySelector('.toolbar-3_r2xA');
-
-            setupButtonUI(getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt);
+            setupButtonUI();
 
             rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
-                insertButtonAtLocationWithStyle(getChannelHeaderInboxIcon, getChannelHeaderInboxIconAlt);
+                insertButtonAtLocationWithStyle();
             });
 
             subscribeTargets.forEach((e) => Dispatcher.subscribe(e, update));
@@ -583,6 +621,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             rcaModalBtn = undefined;
 
             subscribeTargets.forEach((e) => Dispatcher.unsubscribe(e, update));
+        },
+        onSwitch() {
+            if (hasViewErrorTriggered === false) return;
+            insertButtonAtLocationWithStyle();
         },
     });
 };
