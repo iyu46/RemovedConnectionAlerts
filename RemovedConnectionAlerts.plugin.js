@@ -57,6 +57,7 @@ const config = {
                 'Keep UI button on the UI via observer',
                 'Added tooltip on hover for UI button',
                 'Added chronological sorting when displaying history in modal',
+                'Add delete buttons for entries in UI modal',
             ],
         },
         {
@@ -160,7 +161,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         gap: 4px;
         padding: 4px 2px 4px 2px;
         /* border: 2px solid var(--header-primary); */
-        border-radius: 5px; */
+        /* border-radius: 5px; */
         margin: 1px;
     }
     .rcaHistoryAvatar {
@@ -181,6 +182,20 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         font-size: 1.1rem;
         font-weight: 500;
         color: var(--header-primary);
+    }
+    .rcaHistoryDeleteBtn {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: end;
+        align-items: center;
+        flex-grow: 1;
+        padding-right: 8px;
+    }
+    .rcaHistoryDeleteBtnIcon {
+        top: 0px;
+        width: 22px;
+        border: var(--interactive-normal) solid 2px;
+        border-radius: 50%;
     }
     `);
 
@@ -363,36 +378,109 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return { removedFriends, removedGuilds };
     };
 
+    const deleteLogEntry = (deleteId, removedDate, isFriend) => {
+        const workingHistory = (isFriend)
+            ? currentSavedData.removedFriendHistory
+            : currentSavedData.removedGuildHistory;
+
+        const getTruncatedMsTime = (date) => {
+            const dateInMsAsString = new Date(date).getTime().toString();
+            return dateInMsAsString.substring(0, dateInMsAsString.length - 3);
+        };
+
+        const item = workingHistory.find(
+            (i) => (i.id === deleteId)
+            && (getTruncatedMsTime(i.timeRemoved) === getTruncatedMsTime(removedDate)),
+        );
+        console.log(item);
+        // const newWorkingHistory = workingHistory.filter(
+        //     (i) => !((i.id === deleteId)
+        //     && (new Date(i.removedDate).getTime() === new Date(removedDate).getTime())),
+        // );
+        // if (isFriend) {
+        //     currentSavedData.removedFriendHistory = newWorkingHistory;
+        // } else {
+        //     currentSavedData.removedGuildHistory = newWorkingHistory;
+        // }
+        // setSavedData(getCurrentUserId());
+
+        const logEntry = document.getElementById(deleteId).parentElement;
+        logEntry.remove();
+    };
+
+    const createLogEntryDeleteBtn = (deleteId, removedDate, isFriend) => React.createElement('div', {
+        className: 'rcaHistoryDeleteBtn',
+        id: deleteId,
+    }, React.createElement('div', {
+        className: 'winButtonClose-3Q8ZH5 winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
+        onClick: (e) => {
+            if (e.ctrlKey) {
+                deleteLogEntry(deleteId, removedDate, isFriend);
+            }
+        },
+    }, React.createElement('svg', {
+        'aria-hidden': 'true',
+        role: 'img',
+        width: '12',
+        height: '12',
+        viewBox: '0 0 12 12',
+    }, React.createElement('polygon', {
+        fill: 'currentColor',
+        'fill-rule': 'evenodd',
+        points: '11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1',
+    }))));
+
     const createServerLogEntry = ({
         avatarURL = 'https://cdn.discordapp.com/embed/avatars/0.png',
-        serverName = 'error', ownerName = '', removedDate = '',
-    }) => React.createElement('div', {
-        className: 'rcaHistoryItem',
-    }, React.createElement('img', {
-        src: avatarURL,
-        className: 'rcaHistoryAvatar',
-    }), React.createElement(
+        serverName = 'error',
+        ownerName = '',
+        removedDate = '',
+        id = '',
+    }) => React.createElement(
         'div',
         {
-            className: 'rcaHistoryInfo',
+            className: 'rcaHistoryItem',
         },
-        React.createElement('h4', null, serverName),
-        React.createElement('h4', null, `Owner: ${ownerName}`),
-        React.createElement('h4', null, `Removed at: ${removedDate}`),
-    ));
+        React.createElement('img', {
+            src: avatarURL,
+            className: 'rcaHistoryAvatar',
+        }),
+        React.createElement(
+            'div',
+            {
+                className: 'rcaHistoryInfo',
+            },
+            React.createElement('h4', null, serverName),
+            React.createElement('h4', null, `Owner: ${ownerName}`),
+            React.createElement('h4', null, `Removed at: ${removedDate}`),
+        ),
+        createLogEntryDeleteBtn(id, removedDate, false),
+    );
 
     const createFriendLogEntry = ({
         avatarURL = 'https://cdn.discordapp.com/embed/avatars/0.png',
         friendName = '',
         removedDate = '',
-    }) => React.createElement('div', {
-        className: 'rcaHistoryItem',
-    }, React.createElement('img', {
-        src: avatarURL,
-        className: 'rcaHistoryAvatar',
-    }), React.createElement('div', {
-        className: 'rcaHistoryInfo',
-    }, React.createElement('h4', null, friendName), React.createElement('h4', null, `Removed at: ${removedDate}`)));
+        id = '',
+    }) => React.createElement(
+        'div',
+        {
+            className: 'rcaHistoryItem',
+        },
+        React.createElement('img', {
+            src: avatarURL,
+            className: 'rcaHistoryAvatar',
+        }),
+        React.createElement(
+            'div',
+            {
+                className: 'rcaHistoryInfo',
+            },
+            React.createElement('h4', null, friendName),
+            React.createElement('h4', null, `Removed at: ${removedDate}`),
+        ),
+        createLogEntryDeleteBtn(id, removedDate, true),
+    );
 
     const createRecentServerEntries = (removedGuilds = []) => {
         if (removedGuilds.length === 0) return null;
@@ -406,6 +494,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 removedDate: new Date(g.timeRemoved).toLocaleString('ja-JP', {
                     timeZoneName: 'short',
                 }),
+                id: g.id,
             });
         });
 
@@ -423,6 +512,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 removedDate: new Date(f.timeRemoved).toLocaleString('ja-JP', {
                     timeZoneName: 'short',
                 }),
+                id: f.id,
             });
         });
 
@@ -484,18 +574,21 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             {
                 className: 'rcaHistoryContainer',
             },
-            recentFriends.recentElems.length ? [
-                React.createElement('h3', {
-                    className: 'rcaHistoryHeader',
-                }, 'Recently removed friends'),
-                createRecentFriendEntries(recentFriends.recentElems),
-            ] : null,
-            recentGuilds.recentElems.length ? [
-                React.createElement('h3', {
-                    className: 'rcaHistoryHeader',
-                }, 'Recently removed servers'),
-                createRecentServerEntries(recentGuilds.recentElems),
-            ]
+            recentFriends.recentElems.length
+                ? [
+                    React.createElement('h3', {
+                        className: 'rcaHistoryHeader',
+                    }, 'Recently removed friends'),
+                    createRecentFriendEntries(recentFriends.recentElems),
+                ]
+                : null,
+            recentGuilds.recentElems.length
+                ? [
+                    React.createElement('h3', {
+                        className: 'rcaHistoryHeader',
+                    }, 'Recently removed servers'),
+                    createRecentServerEntries(recentGuilds.recentElems),
+                ]
                 : null,
 
             recentFriends.olderElems.length
@@ -531,6 +624,12 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 }
             },
         });
+
+        // const deleteBtns = document.querySelectorAll('.rcaHistoryDeleteBtnIcon') || [];
+
+        // deleteBtns.forEach(
+        //     (elem) => createTooltip(elem, 'Ctrl+Click to delete!', { style: 'warn', side: 'right' }),
+        // );
     };
 
     // original code from https://github.com/BetterDiscord/BetterDiscord/blob/9e0f274b504d155b73c4c3148df5173bd8fad3bc/renderer/src/modules/dommanager.js#L182
