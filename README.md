@@ -13,7 +13,7 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
     - ~~loop over recents and display all within 24 hr (stop processing if current element is removed more than 24 hrs) in recents, display rest in history~~
 
 - ~~UI to delete a friend or server from recorded history~~ "done" but commented out bc unsafe
-    - add tooltip warning for delete buttons
+    - ~~add tooltip warning for delete buttons~~
 
 - confirm stop() cleanup
 

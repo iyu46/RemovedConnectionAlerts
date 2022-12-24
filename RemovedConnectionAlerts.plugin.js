@@ -142,6 +142,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     let currentSavedData;
     let isUpdating = false;
     let hasViewErrorTriggered = false;
+    let doDeleteBtnTooltipsExist = false;
     const isOlderFriendsShadeOpen = false;
     const isOlderGuildsShadeOpen = false;
 
@@ -411,6 +412,16 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const createLogEntryDeleteBtn = (deleteId, removedDate, isFriend) => React.createElement('div', {
         className: 'rcaHistoryDeleteBtn',
         id: deleteId,
+        onMouseEnter: () => {
+            if (!doDeleteBtnTooltipsExist) {
+                doDeleteBtnTooltipsExist = true;
+                const deleteBtns = document.querySelectorAll('.rcaHistoryDeleteBtnIcon') || [];
+
+                deleteBtns.forEach(
+                    (elem) => createTooltip(elem, 'Ctrl+Click to delete!', { style: 'info', side: 'right' }),
+                );
+            }
+        },
     }, React.createElement('div', {
         className: 'winButtonClose-3Q8ZH5 winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
         onClick: (e) => {
@@ -625,11 +636,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             },
         });
 
-        // const deleteBtns = document.querySelectorAll('.rcaHistoryDeleteBtnIcon') || [];
-
-        // deleteBtns.forEach(
-        //     (elem) => createTooltip(elem, 'Ctrl+Click to delete!', { style: 'warn', side: 'right' }),
-        // );
+        doDeleteBtnTooltipsExist = false;
     };
 
     // original code from https://github.com/BetterDiscord/BetterDiscord/blob/9e0f274b504d155b73c4c3148df5173bd8fad3bc/renderer/src/modules/dommanager.js#L182
