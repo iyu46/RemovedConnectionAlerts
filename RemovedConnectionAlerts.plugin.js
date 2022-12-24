@@ -435,21 +435,35 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const splitHistoryBasedOnTimeRemoved = (history = [], time = 0) => {
         let elemsMoreThan24HoursIndex = 0;
+        let wasCurrOlderThan24Hours = false;
+
+        if (history.length === 0) return { recentElems: [], olderElems: [] };
+
         const yesterdayTimestamp = new Date().getTime() - time;
         while (elemsMoreThan24HoursIndex < history.length) {
             const curr = new Date(history[elemsMoreThan24HoursIndex].timeRemoved);
             const currMinus24HoursTimestamp = curr.getTime() - time;
-            if (yesterdayTimestamp > currMinus24HoursTimestamp) break;
+            wasCurrOlderThan24Hours = (yesterdayTimestamp > currMinus24HoursTimestamp);
+            if (wasCurrOlderThan24Hours) break;
             elemsMoreThan24HoursIndex += 1;
         }
 
         let recentElems = [];
         let olderElems = [];
-        recentElems = history.slice(0, elemsMoreThan24HoursIndex + 1);
+        if (history.length > 1) {
+            recentElems = history.slice(0, elemsMoreThan24HoursIndex);
 
-        // if there is a history and the loop didn't repeat till the end of the array (found an element older than 24 hours)
-        if (history.length && (elemsMoreThan24HoursIndex !== history.length - 1)) {
-            olderElems = history.slice(elemsMoreThan24HoursIndex + 1);
+            // if there is a history and the loop didn't repeat till the end of the array (found an element older than 24 hours)
+            if (elemsMoreThan24HoursIndex !== history.length - 1) {
+                olderElems = history.slice(elemsMoreThan24HoursIndex);
+            }
+        }
+
+        // history is length 1
+        if (wasCurrOlderThan24Hours) {
+            olderElems = history;
+        } else {
+            recentElems = history;
         }
 
         return { recentElems, olderElems };
@@ -470,14 +484,20 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             {
                 className: 'rcaHistoryContainer',
             },
-            recentFriendHistory.length ? React.createElement('h3', {
-                className: 'rcaHistoryHeader',
-            }, 'Recently removed friends') : null,
-            createRecentFriendEntries(recentFriends.recentElems),
-            recentGuildHistory.length ? React.createElement('h3', {
-                className: 'rcaHistoryHeader',
-            }, 'Recently removed servers') : null,
-            createRecentServerEntries(recentGuilds.recentElems),
+            recentFriends.recentElems.length ? [
+                React.createElement('h3', {
+                    className: 'rcaHistoryHeader',
+                }, 'Recently removed friends'),
+                createRecentFriendEntries(recentFriends.recentElems),
+            ] : null,
+            recentGuilds.recentElems.length ? [
+                React.createElement('h3', {
+                    className: 'rcaHistoryHeader',
+                }, 'Recently removed servers'),
+                createRecentServerEntries(recentGuilds.recentElems),
+            ]
+                : null,
+
             recentFriends.olderElems.length
                 ? [
                     React.createElement('h4', {
@@ -532,23 +552,20 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     };
 
     // eslint-disable-next-line max-len
-    const getChannelHeaderInboxIcon = () => document.querySelector('a.anchor-1MIwyf.anchorUnderlineOnHover-2qPutX:not(.snowsgivingLink-1TZi3c)')?.previousSibling;
+    const getChannelHeaderInboxIcon = () => document.querySelector('[d="M19 3H4.99C3.88 3 3.01 3.89 3.01 5L3 19C3 20.1 3.88 21 4.99 21H19C20.1 21 21 20.1 21 19V5C21 3.89 20.1 3 19 3ZM19 15H15C15 16.66 13.65 18 12 18C10.35 18 9 16.66 9 15H4.99V5H19V15Z"]').parentElement.parentElement;
 
-    const getChannelHeaderInboxIconAlt = () => document.querySelector('.toolbar-3_r2xA');
+    const isHelpIconInChannelHeader = (inboxIcon) => inboxIcon.nextSibling?.className.includes('anchor');
 
     const insertButtonAtLocationWithStyle = () => {
         try {
             const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
-            const targetElem = channelHeaderInboxIcon
-            || Array.from(getChannelHeaderInboxIconAlt().children).find(
-                (e) => e.className === 'button-1fGHAH iconWrapper-2awDjA clickable-ZD7xvu',
-            );
+            const isHelpIconPresent = isHelpIconInChannelHeader(channelHeaderInboxIcon);
             let rcaModalBtnClassName = 'iconWrapper-2awDjA clickable-ZD7xvu';
-            rcaModalBtnClassName = (channelHeaderInboxIcon)
+            rcaModalBtnClassName = (isHelpIconPresent)
                 ? rcaModalBtnClassName
                 : `button-1fGHAH ${rcaModalBtnClassName}`;
             rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
-            targetElem.parentElement.insertBefore(rcaModalBtn, targetElem);
+            channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
             hasViewErrorTriggered = false;
         } catch (e) {
             Logger.stacktrace(config.info.name, 'View does not contain anchorable elements', e);
@@ -624,6 +641,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         },
         onSwitch() {
             if (hasViewErrorTriggered === false) return;
+            Logger.warn(config.info.name, 'Attempting to re-render button');
             insertButtonAtLocationWithStyle();
         },
     });
