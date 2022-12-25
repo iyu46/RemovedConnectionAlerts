@@ -21,6 +21,8 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
 
 - make constants index of classnames and stuff
 
+- ~~add message when there is no recorded removed history~~
+
 - ~~interval checking? check resource use, observer~~
 
 - ~~proper UI button~~

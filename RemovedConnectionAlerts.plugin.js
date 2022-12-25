@@ -139,6 +139,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     ];
     let rcaModalBtn;
     let rcaModalBtnRemoveObserver;
+    let rcaModalEmptyMessage;
     let currentSavedData;
     let isUpdating = false;
     let hasViewErrorTriggered = false;
@@ -154,6 +155,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         gap: 8px;
         overflow: auto;
         max-height: 75vh;
+    }
+    .rcaHistoryContainer::-webkit-scrollbar {
+        display: none;
     }
     .rcaHistoryItem { /* avatar + item */
         display: flex;
@@ -197,6 +201,16 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         width: 22px;
         border: var(--interactive-normal) solid 2px;
         border-radius: 50%;
+    }
+    .rcaModalEmptyMessage {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+    }
+    .rcaModalEmptyMessageText {
+        color: var(--header-primary);
+        font-size: 1.5rem;
     }
     `);
 
@@ -379,6 +393,15 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return { removedFriends, removedGuilds };
     };
 
+    const createEmptyMessageElem = () => {
+        rcaModalEmptyMessage = document.createElement('div');
+        rcaModalEmptyMessage.setAttribute('class', 'rcaModalEmptyMessage');
+        const rcaModalEmptyMessageText = document.createElement('p');
+        rcaModalEmptyMessageText.setAttribute('class', 'rcaModalEmptyMessageText');
+        rcaModalEmptyMessageText.innerHTML = 'Nothing to see here for now!';
+        rcaModalEmptyMessage.appendChild(rcaModalEmptyMessageText);
+    };
+
     const deleteLogEntry = (deleteId, removedDate, isFriend) => {
         const workingHistory = (isFriend)
             ? currentSavedData.removedFriendHistory
@@ -393,7 +416,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             (i) => (i.id === deleteId)
             && (getTruncatedMsTime(i.timeRemoved) === getTruncatedMsTime(removedDate)),
         );
-        console.log(item);
+        // console.log(item);
         // const newWorkingHistory = workingHistory.filter(
         //     (i) => !((i.id === deleteId)
         //     && (new Date(i.removedDate).getTime() === new Date(removedDate).getTime())),
@@ -406,6 +429,19 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         // setSavedData(getCurrentUserId());
 
         const logEntry = document.getElementById(deleteId).parentElement;
+        const prevEntry = logEntry.previousSibling;
+        const nextEntry = logEntry.nextSibling;
+
+        if (
+            prevEntry.className === 'rcaHistoryHeader'
+            && (nextEntry === null || nextEntry.className === 'rcaHistoryHeader')
+        ) {
+            if (logEntry.parentElement.children.length === 2) {
+                if (rcaModalEmptyMessage === null) createEmptyMessageElem();
+                logEntry.parentElement.appendChild(rcaModalEmptyMessage);
+            }
+            prevEntry.remove();
+        }
         logEntry.remove();
     };
 
@@ -573,52 +609,60 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const openHistoryWindow = () => {
         const recentFriendHistory = [...currentSavedData.removedFriendHistory];
         const recentGuildHistory = [...currentSavedData.removedGuildHistory];
-        Utilities.stableSort(recentFriendHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
-        Utilities.stableSort(recentGuildHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
 
-        const DAY_IN_MS = (24 * 60 * 60 * 1000); // TODO: variable?
-        const recentFriends = splitHistoryBasedOnTimeRemoved(recentFriendHistory, DAY_IN_MS);
-        const recentGuilds = splitHistoryBasedOnTimeRemoved(recentGuildHistory, DAY_IN_MS);
+        let element;
 
-        const element = React.createElement(
-            'div',
-            {
-                className: 'rcaHistoryContainer',
-            },
-            recentFriends.recentElems.length
-                ? [
-                    React.createElement('h3', {
-                        className: 'rcaHistoryHeader',
-                    }, 'Recently removed friends'),
-                    createRecentFriendEntries(recentFriends.recentElems),
-                ]
-                : null,
-            recentGuilds.recentElems.length
-                ? [
-                    React.createElement('h3', {
-                        className: 'rcaHistoryHeader',
-                    }, 'Recently removed servers'),
-                    createRecentServerEntries(recentGuilds.recentElems),
-                ]
-                : null,
+        if (recentFriendHistory.length === 0 && recentGuildHistory.length === 0) {
+            if (rcaModalEmptyMessage === null) createEmptyMessageElem();
+            element = rcaModalEmptyMessage;
+        } else {
+            Utilities.stableSort(recentFriendHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
+            Utilities.stableSort(recentGuildHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
 
-            recentFriends.olderElems.length
-                ? [
-                    React.createElement('h4', {
-                        className: 'rcaHistoryHeader',
-                    }, 'History of removed friends'),
-                    ...createRecentFriendEntries(recentFriends.olderElems),
-                ]
-                : null,
-            recentGuilds.olderElems.length
-                ? [
-                    React.createElement('h4', {
-                        className: 'rcaHistoryHeader',
-                    }, 'History of removed guilds'),
-                    ...createRecentServerEntries(recentGuilds.olderElems),
-                ]
-                : null,
-        );
+            const DAY_IN_MS = (24 * 60 * 60 * 1000); // TODO: variable?
+            const recentFriends = splitHistoryBasedOnTimeRemoved(recentFriendHistory, DAY_IN_MS);
+            const recentGuilds = splitHistoryBasedOnTimeRemoved(recentGuildHistory, DAY_IN_MS);
+
+            element = React.createElement(
+                'div',
+                {
+                    className: 'rcaHistoryContainer',
+                },
+                recentFriends.recentElems.length
+                    ? [
+                        React.createElement('h3', {
+                            className: 'rcaHistoryHeader',
+                        }, 'Recently removed friends'),
+                        createRecentFriendEntries(recentFriends.recentElems),
+                    ]
+                    : null,
+                recentGuilds.recentElems.length
+                    ? [
+                        React.createElement('h3', {
+                            className: 'rcaHistoryHeader',
+                        }, 'Recently removed servers'),
+                        createRecentServerEntries(recentGuilds.recentElems),
+                    ]
+                    : null,
+
+                recentFriends.olderElems.length
+                    ? [
+                        React.createElement('h4', {
+                            className: 'rcaHistoryHeader',
+                        }, 'History of removed friends'),
+                        ...createRecentFriendEntries(recentFriends.olderElems),
+                    ]
+                    : null,
+                recentGuilds.olderElems.length
+                    ? [
+                        React.createElement('h4', {
+                            className: 'rcaHistoryHeader',
+                        }, 'History of removed guilds'),
+                        ...createRecentServerEntries(recentGuilds.olderElems),
+                    ]
+                    : null,
+            );
+        }
 
         showConfirmationModal('RemovedConnectionAlerts', element, {
             confirmText: 'Okay',
