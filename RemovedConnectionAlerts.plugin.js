@@ -785,7 +785,12 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         stop() {
             rcaModalBtnRemoveObserver();
             rcaModalBtn.remove();
-            rcaModalBtn = undefined;
+            rcaModalBtnRemoveObserver = undefined;
+            rcaModalEmptyMessage = undefined;
+            currentSavedData = undefined;
+            isUpdating = undefined;
+            hasViewErrorTriggered = undefined;
+            doDeleteBtnTooltipsExist = undefined;
 
             subscribeTargets.forEach((e) => Dispatcher.unsubscribe(e, update));
         },
