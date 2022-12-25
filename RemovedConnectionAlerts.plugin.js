@@ -57,7 +57,8 @@ const config = {
                 'Keep UI button on the UI via observer',
                 'Added tooltip on hover for UI button',
                 'Added chronological sorting when displaying history in modal',
-                'Add delete buttons for entries in UI modal',
+                'Added delete buttons for entries in UI modal',
+                'Added a message when there is no history',
             ],
         },
         {
@@ -218,7 +219,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const getSavedData = (currentUserId) => {
         const savedData = Data.load(`RemovedConnectionAlerts_${currentUserId}`, 'savedData');
-        if (savedData === undefined) return undefined;
+        if (!savedData) return undefined;
 
         const currentSavedDataInterpret = {
             friendCache: savedData.friendCache,
@@ -318,7 +319,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             removedGuildHistory: [],
         };
 
-        if (savedDataInFile === undefined) {
+        if (!savedDataInFile) {
             currentSavedData = savedData;
             populateEmptyCurrentSavedData();
         } else {
@@ -416,17 +417,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             (i) => (i.id === deleteId)
             && (getTruncatedMsTime(i.timeRemoved) === getTruncatedMsTime(removedDate)),
         );
-        // console.log(item);
-        // const newWorkingHistory = workingHistory.filter(
-        //     (i) => !((i.id === deleteId)
-        //     && (new Date(i.removedDate).getTime() === new Date(removedDate).getTime())),
-        // );
-        // if (isFriend) {
-        //     currentSavedData.removedFriendHistory = newWorkingHistory;
-        // } else {
-        //     currentSavedData.removedGuildHistory = newWorkingHistory;
-        // }
-        // setSavedData(getCurrentUserId());
+        workingHistory.splice(workingHistory.indexOf(item), 1);
+        setSavedData(getCurrentUserId());
 
         const logEntry = document.getElementById(deleteId).parentElement;
         const prevEntry = logEntry.previousSibling;
@@ -434,10 +426,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
         if (
             prevEntry.className === 'rcaHistoryHeader'
-            && (nextEntry === null || nextEntry.className === 'rcaHistoryHeader')
+            && (!nextEntry || nextEntry.className === 'rcaHistoryHeader')
         ) {
             if (logEntry.parentElement.children.length === 2) {
-                if (rcaModalEmptyMessage === null) createEmptyMessageElem();
+                if (!rcaModalEmptyMessage) createEmptyMessageElem();
                 logEntry.parentElement.appendChild(rcaModalEmptyMessage);
             }
             prevEntry.remove();
@@ -454,14 +446,14 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 const deleteBtns = document.querySelectorAll('.rcaHistoryDeleteBtnIcon') || [];
 
                 deleteBtns.forEach(
-                    (elem) => createTooltip(elem, 'Ctrl+Click to delete!', { style: 'info', side: 'right' }),
+                    (elem) => createTooltip(elem, 'Ctrl+Shift+Click to permanently delete!', { style: 'info', side: 'right' }),
                 );
             }
         },
     }, React.createElement('div', {
         className: 'winButtonClose-3Q8ZH5 winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
         onClick: (e) => {
-            if (e.ctrlKey) {
+            if (e.ctrlKey && e.shiftKey) {
                 deleteLogEntry(deleteId, removedDate, isFriend);
             }
         },
@@ -533,7 +525,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         if (removedGuilds.length === 0) return null;
         const removedGuildsAsElements = removedGuilds.map((g) => {
             let avatarURL = g.animatedAvatarURL || g.avatarURL;
-            if (g.icon === null) avatarURL = undefined;
+            if (!g.icon) avatarURL = undefined;
             return createServerLogEntry({
                 avatarURL,
                 serverName: g.name,
@@ -552,7 +544,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         if (removedFriends.length === 0) return null;
         const removedFriendsAsElements = removedFriends.map((f) => {
             let avatarURL = f.animatedAvatarURL || f.avatarURL;
-            if (f.avatar === null) avatarURL = undefined;
+            if (!f.avatar) avatarURL = undefined;
             return createFriendLogEntry({
                 avatarURL,
                 friendName: f.tag,
@@ -613,8 +605,18 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         let element;
 
         if (recentFriendHistory.length === 0 && recentGuildHistory.length === 0) {
-            if (rcaModalEmptyMessage === null) createEmptyMessageElem();
-            element = rcaModalEmptyMessage;
+            if (!rcaModalEmptyMessage) createEmptyMessageElem();
+            element = document.createElement('div');
+            element.setAttribute('class', 'rcaModalContainer');
+            element.appendChild(rcaModalEmptyMessage);
+
+            element = React.createElement(
+                'div',
+                {
+                    className: 'rcaHistoryContainer',
+                    dangerouslySetInnerHTML: { __html: element.outerHTML },
+                },
+            );
         } else {
             Utilities.stableSort(recentFriendHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
             Utilities.stableSort(recentGuildHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));

@@ -7,19 +7,19 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
 ## todo:
 
 - separate UI into recent and history
-    - hide history under an accordion if recent is visible
-    - variable time via settings? is that even necessary? lmao
+    - hide older history under an accordion if recent is visible
+    - variable time for "older" via settings? is that even necessary? lmao
     - ~~ensure both are sorted by date (most recent first)~~
     - ~~loop over recents and display all within 24 hr (stop processing if current element is removed more than 24 hrs) in recents, display rest in history~~
-
-- ~~UI to delete a friend or server from recorded history~~ "done" but commented out bc unsafe
-    - ~~add tooltip warning for delete buttons~~
 
 - confirm stop() cleanup
 
 - auto update fetcher
 
 - make constants index of classnames and stuff
+
+- ~~UI to delete a friend or server from recorded history~~
+    - ~~add tooltip warning for delete buttons~~
 
 - ~~add message when there is no recorded removed history~~
 
