@@ -401,7 +401,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const initializeCurrentSavedData = (currentUserId) => {
         const savedDataInFile = getSavedData(currentUserId);
-        console.log(savedDataInFile);
         const savedData = {
             friendCache: [],
             guildCache: [],
@@ -764,8 +763,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             onCancel: () => {
                 try {
                     const res = compareAndUpdateCurrentSavedData(getCurrentUserId());
-                    console.dir(currentSavedData);
-                    console.dir(res);
                     UI.showToast('Updated cache successfully!', { type: 'success' });
                 } catch (e) {
                     UI.showToast('Cache failed to update', { type: 'error' });
@@ -840,7 +837,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         const res = compareAndUpdateCurrentSavedData(getCurrentUserId());
         if (res && (res.removedFriends.length > 0 || res.removedGuilds.length > 0)) {
             openHistoryWindow();
-            console.dir(res);
         }
     };
 
