@@ -14,9 +14,9 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
 
 - confirm stop() cleanup
 
-- auto update fetcher
+- ~~make constants index of classnames and stuff~~
 
-- make constants index of classnames and stuff
+- ~~auto update fetcher~~
 
 - ~~UI to delete a friend or server from recorded history~~
     - ~~add tooltip warning for delete buttons~~

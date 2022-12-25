@@ -53,6 +53,7 @@ const config = {
             type: 'added',
             items: [
                 'Added auto-patcher',
+                'Refactored internals by pulling up constants',
             ],
         },
         {
@@ -145,6 +146,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         'GUILD_UPDATE',
         'GUILD_DELETE',
     ];
+
     let rcaModalBtn;
     let rcaModalBtnRemoveObserver;
     let rcaModalEmptyMessage;
@@ -221,6 +223,73 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         font-size: 1.5rem;
     }
     `);
+
+    /* eslint-disable max-len */
+    const CssClasses = {
+        container: 'rcaHistoryContainer',
+        item: 'rcaHistoryItem',
+        avatar: 'rcaHistoryAvatar',
+        info: 'rcaHistoryInfo',
+        header: 'rcaHistoryHeader',
+        logDeleteBtn: 'rcaHistoryDeleteBtn',
+        logDeleteBtnIconLabel: 'rcaHistoryDeleteBtnIcon',
+        logDeleteBtnIconClass: 'winButtonClose-3Q8ZH5 winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
+        emptyMessage: 'rcaModalEmptyMessage',
+        emptyMessageText: 'rcaModalEmptyMessageText',
+        inboxIconPath: '[d="M19 3H4.99C3.88 3 3.01 3.89 3.01 5L3 19C3 20.1 3.88 21 4.99 21H19C20.1 21 21 20.1 21 19V5C21 3.89 20.1 3 19 3ZM19 15H15C15 16.66 13.65 18 12 18C10.35 18 9 16.66 9 15H4.99V5H19V15Z"]',
+        toolbarIcon: 'iconWrapper-2awDjA clickable-ZD7xvu',
+        voiceButton: 'button-1fGHAH',
+    };
+
+    const CssClassObjects = {
+        logDeleteBtnSvg: {
+            'aria-hidden': 'true',
+            role: 'img',
+            width: '12',
+            height: '12',
+            viewBox: '0 0 12 12',
+        },
+        logDeleteBtnPolygon: {
+            fill: 'currentColor',
+            'fill-rule': 'evenodd',
+            points: '11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1',
+        },
+        modalBtn: {
+            role: 'button',
+            'aria-label': 'Removed Connection History',
+            tabindex: '0',
+        },
+        modalBtnIcon: {
+            x: '0',
+            y: '0',
+            class: 'icon-2xnN2Y',
+            'aria-hidden': 'true',
+            role: 'img',
+            width: '24',
+            height: '24',
+            viewBox: '0 0 16 16',
+        },
+        modalBtnPath: {
+            fill: 'currentColor',
+            d: 'M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm6.146-2.854a.5.5 0 0 1 .708 0L14 6.293l1.146-1.147a.5.5 0 0 1 .708.708L14.707 7l1.147 1.146a.5.5 0 0 1-.708.708L14 7.707l-1.146 1.147a.5.5 0 0 1-.708-.708L13.293 7l-1.147-1.146a.5.5 0 0 1 0-.708z',
+        },
+    };
+
+    const Constants = {
+        emptyMessageText: 'Nothing to see here for now!',
+        deleteBtnTooltipText: 'Ctrl+Shift+Click to permanently delete!',
+        recentFriends: 'Recently removed friends',
+        recentServers: 'Recently removed servers',
+        olderFriends: 'History of removed friends',
+        olderServers: 'History of removed servers',
+        modalConfirm: 'Okay',
+        modalCancel: 'Update cache',
+        modalBtnTooltipText: 'Removal History',
+        svgSourceSadge: 'http://www.w3.org/2000/svg',
+        defaultdiscordAvatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
+    };
+
+    /* eslint-enable max-len */
 
     const getCurrentUserId = () => UserStore.getCurrentUser().id;
 
@@ -419,10 +488,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const createEmptyMessageElem = () => {
         rcaModalEmptyMessage = document.createElement('div');
-        rcaModalEmptyMessage.setAttribute('class', 'rcaModalEmptyMessage');
+        rcaModalEmptyMessage.setAttribute('class', CssClasses.emptyMessage);
         const rcaModalEmptyMessageText = document.createElement('p');
-        rcaModalEmptyMessageText.setAttribute('class', 'rcaModalEmptyMessageText');
-        rcaModalEmptyMessageText.innerHTML = 'Nothing to see here for now!';
+        rcaModalEmptyMessageText.setAttribute('class', CssClasses.emptyMessageText);
+        rcaModalEmptyMessageText.innerHTML = Constants.emptyMessageText;
         rcaModalEmptyMessage.appendChild(rcaModalEmptyMessageText);
     };
 
@@ -448,8 +517,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         const nextEntry = logEntry.nextSibling;
 
         if (
-            prevEntry.className === 'rcaHistoryHeader'
-            && (!nextEntry || nextEntry.className === 'rcaHistoryHeader')
+            prevEntry.className === CssClasses.header
+            && (!nextEntry || nextEntry.className === CssClasses.header)
         ) {
             if (logEntry.parentElement.children.length === 2) {
                 if (!rcaModalEmptyMessage) createEmptyMessageElem();
@@ -461,39 +530,36 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     };
 
     const createLogEntryDeleteBtn = (deleteId, removedDate, isFriend) => React.createElement('div', {
-        className: 'rcaHistoryDeleteBtn',
+        className: CssClasses.logDeleteBtn,
         id: deleteId,
         onMouseEnter: () => {
             if (!doDeleteBtnTooltipsExist) {
                 doDeleteBtnTooltipsExist = true;
-                const deleteBtns = document.querySelectorAll('.rcaHistoryDeleteBtnIcon') || [];
+                const deleteBtns = document.querySelectorAll(`.${CssClasses.logDeleteBtnIconLabel}`) || [];
 
                 deleteBtns.forEach(
-                    (elem) => createTooltip(elem, 'Ctrl+Shift+Click to permanently delete!', { style: 'info', side: 'right' }),
+                    (elem) => createTooltip(elem, Constants.deleteBtnTooltipText, { style: 'info', side: 'right' }),
                 );
             }
         },
     }, React.createElement('div', {
-        className: 'winButtonClose-3Q8ZH5 winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
+        className: CssClasses.logDeleteBtnIconClass,
         onClick: (e) => {
             if (e.ctrlKey && e.shiftKey) {
                 deleteLogEntry(deleteId, removedDate, isFriend);
             }
         },
-    }, React.createElement('svg', {
-        'aria-hidden': 'true',
-        role: 'img',
-        width: '12',
-        height: '12',
-        viewBox: '0 0 12 12',
-    }, React.createElement('polygon', {
-        fill: 'currentColor',
-        'fill-rule': 'evenodd',
-        points: '11 1.576 6.583 6 11 10.424 10.424 11 6 6.583 1.576 11 1 10.424 5.417 6 1 1.576 1.576 1 6 5.417 10.424 1',
-    }))));
+    }, React.createElement(
+        'svg',
+        CssClassObjects.logDeleteBtnSvg,
+        React.createElement(
+            'polygon',
+            CssClassObjects.logDeleteBtnPolygon,
+        ),
+    )));
 
     const createServerLogEntry = ({
-        avatarURL = 'https://cdn.discordapp.com/embed/avatars/0.png',
+        avatarURL = Constants.defaultdiscordAvatar,
         serverName = 'error',
         ownerName = '',
         removedDate = '',
@@ -501,16 +567,16 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     }) => React.createElement(
         'div',
         {
-            className: 'rcaHistoryItem',
+            className: CssClasses.item,
         },
         React.createElement('img', {
             src: avatarURL,
-            className: 'rcaHistoryAvatar',
+            className: CssClasses.avatar,
         }),
         React.createElement(
             'div',
             {
-                className: 'rcaHistoryInfo',
+                className: CssClasses.info,
             },
             React.createElement('h4', null, serverName),
             React.createElement('h4', null, `Owner: ${ownerName}`),
@@ -520,23 +586,23 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     );
 
     const createFriendLogEntry = ({
-        avatarURL = 'https://cdn.discordapp.com/embed/avatars/0.png',
+        avatarURL = Constants.defaultdiscordAvatar,
         friendName = '',
         removedDate = '',
         id = '',
     }) => React.createElement(
         'div',
         {
-            className: 'rcaHistoryItem',
+            className: CssClasses.item,
         },
         React.createElement('img', {
             src: avatarURL,
-            className: 'rcaHistoryAvatar',
+            className: CssClasses.avatar,
         }),
         React.createElement(
             'div',
             {
-                className: 'rcaHistoryInfo',
+                className: CssClasses.info,
             },
             React.createElement('h4', null, friendName),
             React.createElement('h4', null, `Removed at: ${removedDate}`),
@@ -632,13 +698,13 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         if (recentFriendHistory.length === 0 && recentGuildHistory.length === 0) {
             if (!rcaModalEmptyMessage) createEmptyMessageElem();
             element = document.createElement('div');
-            element.setAttribute('class', 'rcaModalContainer');
+            element.setAttribute('class', CssClasses.container);
             element.appendChild(rcaModalEmptyMessage);
 
             element = React.createElement(
                 'div',
                 {
-                    className: 'rcaHistoryContainer',
+                    className: CssClasses.container,
                     dangerouslySetInnerHTML: { __html: element.outerHTML },
                 },
             );
@@ -653,21 +719,21 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             element = React.createElement(
                 'div',
                 {
-                    className: 'rcaHistoryContainer',
+                    className: CssClasses.container,
                 },
                 recentFriends.recentElems.length
                     ? [
                         React.createElement('h3', {
-                            className: 'rcaHistoryHeader',
-                        }, 'Recently removed friends'),
+                            className: CssClasses.header,
+                        }, Constants.recentFriends),
                         createRecentFriendEntries(recentFriends.recentElems),
                     ]
                     : null,
                 recentGuilds.recentElems.length
                     ? [
                         React.createElement('h3', {
-                            className: 'rcaHistoryHeader',
-                        }, 'Recently removed servers'),
+                            className: CssClasses.header,
+                        }, Constants.recentServers),
                         createRecentServerEntries(recentGuilds.recentElems),
                     ]
                     : null,
@@ -675,16 +741,16 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 recentFriends.olderElems.length
                     ? [
                         React.createElement('h4', {
-                            className: 'rcaHistoryHeader',
-                        }, 'History of removed friends'),
+                            className: CssClasses.header,
+                        }, Constants.olderFriends),
                         ...createRecentFriendEntries(recentFriends.olderElems),
                     ]
                     : null,
                 recentGuilds.olderElems.length
                     ? [
                         React.createElement('h4', {
-                            className: 'rcaHistoryHeader',
-                        }, 'History of removed servers'),
+                            className: CssClasses.header,
+                        }, Constants.olderServers),
                         ...createRecentServerEntries(recentGuilds.olderElems),
                     ]
                     : null,
@@ -692,8 +758,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         }
 
         showConfirmationModal(config.info.name, element, {
-            confirmText: 'Okay',
-            cancelText: 'Update cache',
+            confirmText: Constants.modalConfirm,
+            cancelText: Constants.modalCancel,
             onConfirm: () => {},
             onCancel: () => {
                 try {
@@ -728,8 +794,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return () => { observer.disconnect(); };
     };
 
-    // eslint-disable-next-line max-len
-    const getChannelHeaderInboxIcon = () => document.querySelector('[d="M19 3H4.99C3.88 3 3.01 3.89 3.01 5L3 19C3 20.1 3.88 21 4.99 21H19C20.1 21 21 20.1 21 19V5C21 3.89 20.1 3 19 3ZM19 15H15C15 16.66 13.65 18 12 18C10.35 18 9 16.66 9 15H4.99V5H19V15Z"]').parentElement.parentElement;
+    const getChannelHeaderInboxIcon = () => document.querySelector(CssClasses.inboxIconPath)
+        .parentElement.parentElement;
 
     const isHelpIconInChannelHeader = (inboxIcon) => inboxIcon.nextSibling?.className.includes('anchor');
 
@@ -737,10 +803,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         try {
             const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
             const isHelpIconPresent = isHelpIconInChannelHeader(channelHeaderInboxIcon);
-            let rcaModalBtnClassName = 'iconWrapper-2awDjA clickable-ZD7xvu';
-            rcaModalBtnClassName = (isHelpIconPresent)
-                ? rcaModalBtnClassName
-                : `button-1fGHAH ${rcaModalBtnClassName}`;
+            const rcaModalBtnClassName = (isHelpIconPresent)
+                ? CssClasses.toolbarIcon
+                : `${CssClasses.voiceButton} ${CssClasses.toolbarIcon}`;
             rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
             channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
             hasViewErrorTriggered = false;
@@ -752,36 +817,23 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const setupButtonUI = () => {
         rcaModalBtn = document.createElement('div');
-        const rcaModalBtnStyle = {
-            // class: 'iconWrapper-2awDjA clickable-ZD7xvu',
-            role: 'button',
-            'aria-label': 'Removed Connection History',
-            tabindex: '0',
-        };
-        Object.entries(rcaModalBtnStyle).forEach(([key, value]) => rcaModalBtn.setAttribute(key, value));
-        const rcaModalBtnIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        const rcaModalBtnIconStyle = {
-            x: '0',
-            y: '0',
-            class: 'icon-2xnN2Y',
-            'aria-hidden': 'true',
-            role: 'img',
-            width: '24',
-            height: '24',
-            viewBox: '0 0 16 16',
-        };
-        Object.entries(rcaModalBtnIconStyle).forEach(([key, value]) => rcaModalBtnIcon.setAttribute(key, value));
-        const rcaModalBtnPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        rcaModalBtnPath.setAttribute('fill', 'currentColor');
-        // eslint-disable-next-line max-len
-        rcaModalBtnPath.setAttribute('d', 'M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm6.146-2.854a.5.5 0 0 1 .708 0L14 6.293l1.146-1.147a.5.5 0 0 1 .708.708L14.707 7l1.147 1.146a.5.5 0 0 1-.708.708L14 7.707l-1.146 1.147a.5.5 0 0 1-.708-.708L13.293 7l-1.147-1.146a.5.5 0 0 1 0-.708z');
+        Object.entries(CssClassObjects.modalBtn).forEach(([key, value]) => rcaModalBtn.setAttribute(key, value));
+        const rcaModalBtnIcon = document.createElementNS(Constants.svgSourceSadge, 'svg');
+        Object.entries(CssClassObjects.modalBtnIcon).forEach(
+            ([key, value]) => rcaModalBtnIcon.setAttribute(key, value),
+        );
+        const rcaModalBtnPath = document.createElementNS(Constants.svgSourceSadge, 'path');
+        Object.entries(CssClassObjects.modalBtnPath).forEach(
+            ([key, value]) => rcaModalBtnPath.setAttribute(key, value),
+        );
+
         rcaModalBtn.addEventListener('click', () => openHistoryWindow());
 
         rcaModalBtnIcon.appendChild(rcaModalBtnPath);
         rcaModalBtn.appendChild(rcaModalBtnIcon);
 
         insertButtonAtLocationWithStyle();
-        createTooltip(rcaModalBtn, 'Removal History', { side: 'bottom' });
+        createTooltip(rcaModalBtn, Constants.modalBtnTooltipText, { side: 'bottom' });
     };
 
     const update = () => {
