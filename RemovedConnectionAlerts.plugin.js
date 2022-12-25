@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.5.3
+ * @version 0.5.4
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -42,12 +42,19 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.5.3',
+        version: '0.5.4',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
+        {
+            title: '0.5.4',
+            type: 'added',
+            items: [
+                'Added auto-patcher',
+            ],
+        },
         {
             title: '0.5.3',
             type: 'added',
@@ -123,7 +130,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const { createTooltip, showConfirmationModal } = UI;
 
     const {
-        DiscordModules, DOMTools, Logger, Utilities,
+        DiscordModules, DOMTools, Logger, PluginUpdater, Utilities,
     } = window.ZLibrary;
     const {
         React, Dispatcher, GuildStore, RelationshipStore, UserStore,
@@ -148,7 +155,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const isOlderFriendsShadeOpen = false;
     const isOlderGuildsShadeOpen = false;
 
-    DOMTools.addStyle('RemovedConnectionAlerts', `
+    DOMTools.addStyle(config.info.name, `
     .rcaHistoryContainer {
         display: flex;
         flex-direction: column;
@@ -217,8 +224,24 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const getCurrentUserId = () => UserStore.getCurrentUser().id;
 
+    const getLastSavedVersion = () => {
+        const savedConfig = Data.load(config.info.name, 'config');
+
+        // if there is no savedConfig or local version is more up to date than last-seen version
+        if (!savedConfig || PluginUpdater.defaultComparator(savedConfig?.version, config.info.version)) {
+            const newConfig = {
+                version: config.info.version,
+            };
+
+            Data.save(config.info.name, 'config', newConfig);
+            return config.info.version;
+        }
+
+        return savedConfig.version;
+    };
+
     const getSavedData = (currentUserId) => {
-        const savedData = Data.load(`RemovedConnectionAlerts_${currentUserId}`, 'savedData');
+        const savedData = Data.load(`${config.info.name}_${currentUserId}`, 'savedData');
         if (!savedData) return undefined;
 
         const currentSavedDataInterpret = {
@@ -242,7 +265,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             removedFriendHistory: currentSavedData.removedFriendHistory,
             removedGuildHistory: currentSavedData.removedGuildHistory,
         };
-        return Data.save(`RemovedConnectionAlerts_${currentUserId}`, 'savedData', currentSavedDataSnapshot);
+        return Data.save(`${config.info.name}_${currentUserId}`, 'savedData', currentSavedDataSnapshot);
     };
 
     const getFriendsList = () => {
@@ -580,12 +603,14 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         let recentElems = [];
         let olderElems = [];
         if (history.length > 1) {
-            recentElems = history.slice(0, elemsMoreThan24HoursIndex);
+            recentElems = history.slice(0, elemsMoreThan24HoursIndex + 1);
 
             // if there is a history and the loop didn't repeat till the end of the array (found an element older than 24 hours)
-            if (elemsMoreThan24HoursIndex !== history.length - 1) {
-                olderElems = history.slice(elemsMoreThan24HoursIndex);
+            if (elemsMoreThan24HoursIndex !== history.length) {
+                olderElems = history.slice(elemsMoreThan24HoursIndex + 1);
             }
+
+            return { recentElems, olderElems };
         }
 
         // history is length 1
@@ -659,14 +684,14 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                     ? [
                         React.createElement('h4', {
                             className: 'rcaHistoryHeader',
-                        }, 'History of removed guilds'),
+                        }, 'History of removed servers'),
                         ...createRecentServerEntries(recentGuilds.olderElems),
                     ]
                     : null,
             );
         }
 
-        showConfirmationModal('RemovedConnectionAlerts', element, {
+        showConfirmationModal(config.info.name, element, {
             confirmText: 'Okay',
             cancelText: 'Update cache',
             onConfirm: () => {},
@@ -774,6 +799,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         getVersion() { return config.info.version; },
         start() {
             Logger.info(config.info.name, `version ${config.info.version} has started.`);
+            const version = getLastSavedVersion();
+            PluginUpdater.checkForUpdate(config.info.name, version, config.info.github_raw);
+
             initializeCurrentSavedData(getCurrentUserId());
 
             setupButtonUI();
