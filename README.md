@@ -1,6 +1,6 @@
 # RemovedConnectionAlerts (not finished, use at own risk)
 
-Keep track of your friends and servers on BetterDiscord, and get notified if you get unfriended or kicked from a server.
+Keep track of your friends and servers on [BetterDiscord](https://betterdiscord.app), and get notified if you get unfriended or kicked from a server.
 
 Note: This plugin only tracks removals from when it's installed. It cannot show you your history from before installation.
 
@@ -15,6 +15,8 @@ Access your history by clicking this button, next to your inbox icon:
 ![RemovedConnectionAlerts button](/screenshots/icon_dashboard.png)
 
 The UI will appear like below, with your recent removals (within the last 24 hours) being at the top, and the rest at the bottom of the window.
+
+This UI will also automatically appear when a removal is detected.
 
 Updating your cache will manually check your friends and servers lists for updates:
 
