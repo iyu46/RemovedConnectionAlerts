@@ -53,7 +53,7 @@ const config = {
             title: '0.5.5',
             type: 'improved',
             items: [
-                'Improved auto-patcher???????',
+                'Improved auto-patcher?',
             ],
         },
         {
@@ -866,7 +866,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                     config.changelog,
                 );
             }
-            // PluginUpdater.checkForUpdate(config.info.name, lastSavedVersion.version, config.info.github_raw);
+            PluginUpdater.checkForUpdate(config.info.name, lastSavedVersion.version, config.info.github_raw);
 
             initializeCurrentSavedData(getCurrentUserId());
 
