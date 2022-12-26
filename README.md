@@ -36,7 +36,7 @@ Hold **Ctrl** and **Shift** while clicking the delete icon to permanently delete
 
 - confirm stop() cleanup
 
-- changelog modal?
+- ~~changelog modal?~~
 
 - ~~make constants index of classnames and stuff~~
 

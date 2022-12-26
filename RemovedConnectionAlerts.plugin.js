@@ -54,6 +54,7 @@ const config = {
             items: [
                 'Added auto-patcher',
                 'Refactored internals by pulling up constants',
+                'Added changelog modal',
             ],
         },
         {
@@ -127,11 +128,11 @@ if (!global.ZeresPluginLibrary) {
 /* eslint-enable max-len, global-require, consistent-return, no-promise-executor-return, import/no-unresolved */
 
 module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
-    const { Data, UI } = window.BdApi;
+    const { Data, UI, Utils } = window.BdApi;
     const { createTooltip, showConfirmationModal } = UI;
 
     const {
-        DiscordModules, DOMTools, Logger, PluginUpdater, Utilities,
+        DiscordModules, DOMTools, Modals, Logger, PluginUpdater, Utilities,
     } = window.ZLibrary;
     const {
         React, Dispatcher, GuildStore, RelationshipStore, UserStore,
@@ -287,6 +288,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         modalBtnTooltipText: 'Removal History',
         svgSourceSadge: 'http://www.w3.org/2000/svg',
         defaultdiscordAvatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
+        changelogTitle: 'RemovedConnectionHistory Changelog',
     };
 
     /* eslint-enable max-len */
@@ -303,10 +305,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             };
 
             Data.save(config.info.name, 'config', newConfig);
-            return config.info.version;
+            return { version: config.info.version, showChangelog: true };
         }
 
-        return savedConfig.version;
+        return { version: savedConfig.version, showChangelog: false };
     };
 
     const getSavedData = (currentUserId) => {
@@ -800,9 +802,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         try {
             const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
             const isHelpIconPresent = isHelpIconInChannelHeader(channelHeaderInboxIcon);
-            const rcaModalBtnClassName = (isHelpIconPresent)
-                ? CssClasses.toolbarIcon
-                : `${CssClasses.voiceButton} ${CssClasses.toolbarIcon}`;
+            const rcaModalBtnClassName = Utils.className(
+                { [CssClasses.voiceButton]: (!isHelpIconPresent) },
+                CssClasses.toolbarIcon,
+            );
             rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
             channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
             hasViewErrorTriggered = false;
@@ -847,8 +850,15 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         getVersion() { return config.info.version; },
         start() {
             Logger.info(config.info.name, `version ${config.info.version} has started.`);
-            const version = getLastSavedVersion();
-            PluginUpdater.checkForUpdate(config.info.name, version, config.info.github_raw);
+            const lastSavedVersion = getLastSavedVersion();
+            if (lastSavedVersion.showChangelog) {
+                Modals.showChangelogModal(
+                    Constants.changelogTitle,
+                    lastSavedVersion.version,
+                    config.changelog,
+                );
+            }
+            PluginUpdater.checkForUpdate(config.info.name, lastSavedVersion.version, config.info.github_raw);
 
             initializeCurrentSavedData(getCurrentUserId());
 
