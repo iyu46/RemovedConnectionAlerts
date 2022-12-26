@@ -2,10 +2,11 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.5.4
+ * @version 0.5.5
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
+ * @updateUrl https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
  */
 /* eslint-disable */
 /*@cc_on
@@ -42,12 +43,19 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.5.4',
+        version: '0.5.5',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
+        {
+            title: '0.5.5',
+            type: 'improved',
+            items: [
+                'Improved auto-patcher???????',
+            ],
+        },
         {
             title: '0.5.4',
             type: 'added',
@@ -858,7 +866,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                     config.changelog,
                 );
             }
-            PluginUpdater.checkForUpdate(config.info.name, lastSavedVersion.version, config.info.github_raw);
+            // PluginUpdater.checkForUpdate(config.info.name, lastSavedVersion.version, config.info.github_raw);
 
             initializeCurrentSavedData(getCurrentUserId());
 
