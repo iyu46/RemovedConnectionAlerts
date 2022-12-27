@@ -1,4 +1,4 @@
-# RemovedConnectionAlerts (not finished, use at own risk)
+# RemovedConnectionAlerts
 
 Keep track of your friends and servers on [BetterDiscord](https://betterdiscord.app), and get notified if you get unfriended or kicked from a server.
 
