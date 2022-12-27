@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.5.5
+ * @version 0.5.6
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,32 +43,26 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.5.5',
+        version: '0.5.6',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.5.5',
+            title: '0.5.6',
             type: 'improved',
             items: [
-                'Improved auto-patcher?',
+                'Condensed changelog',
             ],
         },
         {
-            title: '0.5.4',
+            title: '0.5.0 - 0.5.5',
             type: 'added',
             items: [
                 'Added auto-patcher',
                 'Refactored internals by pulling up constants',
                 'Added changelog modal',
-            ],
-        },
-        {
-            title: '0.5.3',
-            type: 'added',
-            items: [
                 'Added automatic checking through dispatcher',
                 'Added proper UI button with icon next to Inbox (thanks programmer2514!)',
                 'Keep UI button on the UI via observer',
@@ -76,28 +70,10 @@ const config = {
                 'Added chronological sorting when displaying history in modal',
                 'Added delete buttons for entries in UI modal',
                 'Added a message when there is no history',
-            ],
-        },
-        {
-            title: '0.5.2',
-            type: 'improved',
-            items: [
                 'Added user id in config file name for multi-user support',
-            ],
-        },
-        {
-            title: '0.5.1',
-            type: 'added',
-            items: [
                 'Added check for ZeresPluginLibrary on launch',
                 'Added check for direct file execution on launch',
                 'Restructure internals',
-            ],
-        },
-        {
-            title: '0.5.0',
-            type: 'improved',
-            items: [
                 'Renamed to RemovedConnectionAlerts',
                 'Added ESLint internally',
             ],
