@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.5.6
+ * @version 0.5.7
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,23 +43,24 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.5.6',
+        version: '0.5.7',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.5.6',
+            title: '0.5.7',
             type: 'improved',
             items: [
-                'Condensed changelog',
+                'Fixed 24-hour entry splitting algorithm',
             ],
         },
         {
-            title: '0.5.0 - 0.5.5',
+            title: '0.5.0 - 0.5.6',
             type: 'added',
             items: [
+                'Condensed changelog',
                 'Added auto-patcher',
                 'Refactored internals by pulling up constants',
                 'Added changelog modal',
@@ -645,8 +646,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         const yesterdayTimestamp = new Date().getTime() - time;
         while (elemsMoreThan24HoursIndex < history.length) {
             const curr = new Date(history[elemsMoreThan24HoursIndex].timeRemoved);
-            const currMinus24HoursTimestamp = curr.getTime() - time;
-            wasCurrOlderThan24Hours = (yesterdayTimestamp > currMinus24HoursTimestamp);
+            const currTimestamp = curr.getTime();
+            wasCurrOlderThan24Hours = (yesterdayTimestamp > currTimestamp);
             if (wasCurrOlderThan24Hours) break;
             elemsMoreThan24HoursIndex += 1;
         }
@@ -654,11 +655,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         let recentElems = [];
         let olderElems = [];
         if (history.length > 1) {
-            recentElems = history.slice(0, elemsMoreThan24HoursIndex + 1);
+            recentElems = history.slice(0, elemsMoreThan24HoursIndex);
 
             // if there is a history and the loop didn't repeat till the end of the array (found an element older than 24 hours)
             if (elemsMoreThan24HoursIndex !== history.length) {
-                olderElems = history.slice(elemsMoreThan24HoursIndex + 1);
+                olderElems = history.slice(elemsMoreThan24HoursIndex);
             }
 
             return { recentElems, olderElems };
