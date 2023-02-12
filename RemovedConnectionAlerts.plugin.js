@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.6.0
+ * @version 0.6.1
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,16 +43,17 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.6.0',
+        version: '0.6.1',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.6.0',
+            title: '0.6.1',
             type: 'improved',
             items: [
+                'Remove ZLibrary auto-patcher in favour of built-in BD one',
                 'Added removal check at startup',
             ],
         },
@@ -63,7 +64,6 @@ const config = {
                 'Fixed plugin icon appearing bugged due to new Discord styling',
                 'Fixed 24-hour entry splitting algorithm',
                 'Condensed changelog',
-                'Added auto-patcher',
                 'Refactored internals by pulling up constants',
                 'Added changelog modal',
                 'Added automatic checking through dispatcher',
@@ -844,7 +844,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                     config.changelog,
                 );
             }
-            PluginUpdater.checkForUpdate(config.info.name, lastSavedVersion.version, config.info.github_raw);
 
             initializeCurrentSavedData(getCurrentUserId());
 
