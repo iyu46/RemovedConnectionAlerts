@@ -12,7 +12,7 @@ Thank you [programmer2514](https://github.com/programmer2514) and their [Collaps
 
 Access your history by clicking this button, next to your inbox icon:
 
-![RemovedConnectionAlerts button](/screenshots/icon_dashboard.png)
+![RemovedConnectionAlerts button](https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/screenshots/icon_dashboard.png)
 
 The UI will appear like below, with your recent removals (within the last 24 hours) being at the top, and the rest at the bottom of the window.
 
@@ -20,8 +20,8 @@ This UI will also automatically appear when a removal is detected.
 
 Updating your cache will manually check your friends and servers lists for updates:
 
-![RemovedConnectionAlerts UI](/screenshots/window_example.png)
+![RemovedConnectionAlerts UI](https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/screenshots/window_example.png)
 
 Hold **Ctrl** and **Shift** while clicking the delete icon to permanently delete an entry from your history:
 
-![Deleting a history log on the UI](/screenshots/delete_button.png)
+![Deleting a history log on the UI](https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/screenshots/delete_button.png)
