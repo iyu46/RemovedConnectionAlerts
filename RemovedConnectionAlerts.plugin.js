@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.5.8
+ * @version 0.6.0
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,30 +43,25 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.5.8',
+        version: '0.6.0',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.5.8',
-            type: 'fixed',
-            items: [
-                'Fixed plugin icon appearing bugged due to new Discord styling',
-            ],
-        },
-        {
-            title: '0.5.7',
+            title: '0.6.0',
             type: 'improved',
             items: [
-                'Fixed 24-hour entry splitting algorithm',
+                'Added removal check at startup',
             ],
         },
         {
-            title: '0.5.0 - 0.5.6',
+            title: '0.5.0 - 0.5.8',
             type: 'added',
             items: [
+                'Fixed plugin icon appearing bugged due to new Discord styling',
+                'Fixed 24-hour entry splitting algorithm',
                 'Condensed changelog',
                 'Added auto-patcher',
                 'Refactored internals by pulling up constants',
