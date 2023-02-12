@@ -860,6 +860,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             });
 
             subscribeTargets.forEach((e) => Dispatcher.subscribe(e, update));
+            update();
         },
         stop() {
             rcaModalBtnRemoveObserver();
