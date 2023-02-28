@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.6.1
+ * @version 0.6.2
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,12 +43,19 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.6.1',
+        version: '0.6.2',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
+        {
+            title: '0.6.2',
+            type: 'improved',
+            items: [
+                'Plugin no longer crashes when switching channels (thanks Pallen0304!)'
+            ],
+        },
         {
             title: '0.6.1',
             type: 'improved',
@@ -782,7 +789,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const getChannelHeaderInboxIcon = () => document.querySelector(`.${CssClasses.recentsIcon}`);
 
-    const isHelpIconInChannelHeader = (inboxIcon) => inboxIcon.nextSibling?.className.includes('anchor');
+    const isHelpIconInChannelHeader = (inboxIcon) => inboxIcon?.nextSibling?.className.includes('anchor');
 
     const insertButtonAtLocationWithStyle = () => {
         try {
@@ -793,7 +800,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 CssClasses.toolbarIcon,
             );
             rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
-            channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
+            channelHeaderInboxIcon?.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
             hasViewErrorTriggered = false;
         } catch (e) {
             Logger.stacktrace(config.info.name, 'View does not contain anchorable elements', e);
