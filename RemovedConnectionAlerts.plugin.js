@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.6.2
+ * @version 0.6.3
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,23 +43,24 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.6.2',
+        version: '0.6.3',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.6.2',
+            title: '0.6.3',
             type: 'improved',
             items: [
-                'Plugin no longer crashes when switching channels (thanks Pallen0304!)'
+                'Fixed invalid cache reading when using Discord\'s account switcher',
             ],
         },
         {
-            title: '0.6.1',
+            title: '0.6.0 - 0.6.2',
             type: 'improved',
             items: [
+                'Plugin no longer crashes when switching channels (thanks Pallen0304!)',
                 'Remove ZLibrary auto-patcher in favour of built-in BD one',
                 'Added removal check at startup',
             ],
@@ -126,7 +127,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const { createTooltip, showConfirmationModal } = UI;
 
     const {
-        DiscordModules, DOMTools, Modals, Logger, PluginUpdater, Utilities,
+        DiscordModules, DOMTools, Modals, Logger, Utilities,
     } = window.ZLibrary;
     const {
         React, Dispatcher, GuildStore, RelationshipStore, UserStore,
@@ -146,6 +147,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     let rcaModalBtnRemoveObserver;
     let rcaModalEmptyMessage;
     let currentSavedData;
+    let savedUserId;
     let isUpdating = false;
     let hasViewErrorTriggered = false;
     let doDeleteBtnTooltipsExist = false;
@@ -270,7 +272,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         },
     };
 
-    const Constants = {
+    const Constants = { // aka locale_EN
         emptyMessageText: 'Nothing to see here for now!',
         deleteBtnTooltipText: 'Ctrl+Shift+Click to permanently delete!',
         recentFriends: 'Recently removed friends',
@@ -282,18 +284,37 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         modalBtnTooltipText: 'Removal History',
         svgSourceSadge: 'http://www.w3.org/2000/svg',
         defaultdiscordAvatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
-        changelogTitle: 'RemovedConnectionHistory Changelog',
+        changelogTitle: `${config.info.name} Changelog`,
+        updateCacheToastSuccessText: 'Updated cache successfully!',
+        updateCacheToastFailureText: 'Cache failed to update',
     };
 
     /* eslint-enable max-len */
 
     const getCurrentUserId = () => UserStore.getCurrentUser().id;
 
+    // adapted from https://rauenzi.github.io/BDPluginLibrary/docs/modules_pluginupdater.js.html#line-111 in anticipation of removal
+    const semverComparator = (currentVersion, remoteVersion) => {
+        const splitCurrentVersion = currentVersion.split('.').map((e) => parseInt(e, 10));
+        const splitRemoteVersion = remoteVersion.split('.').map((e) => parseInt(e, 10));
+
+        if (splitRemoteVersion[0] > splitCurrentVersion[0]) return true;
+
+        if (splitRemoteVersion[0] === splitCurrentVersion[0]
+            && splitRemoteVersion[1] > splitCurrentVersion[1]) return true;
+
+        if (splitRemoteVersion[0] === splitCurrentVersion[0]
+            && splitRemoteVersion[1] === splitCurrentVersion[1]
+            && splitRemoteVersion[2] > splitCurrentVersion[2]) return true;
+
+        return false;
+    };
+
     const getLastSavedVersion = () => {
         const savedConfig = Data.load(config.info.name, 'config');
 
         // if there is no savedConfig or local version is more up to date than last-seen version
-        if (!savedConfig || PluginUpdater.defaultComparator(savedConfig?.version, config.info.version)) {
+        if (!savedConfig || semverComparator(savedConfig?.version, config.info.version)) {
             const newConfig = {
                 version: config.info.version,
             };
@@ -643,7 +664,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     };
 
     const createOlderFriendEntries = (removedFriends = []) => {
-        // wrap createRecentFriendEntries and h4 header in a collapsible div?
+        // TODO: wrap createRecentFriendEntries and h4 header in a collapsible div?
     };
 
     const splitHistoryBasedOnTimeRemoved = (history = [], time = 0) => {
@@ -684,7 +705,24 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return { recentElems, olderElems };
     };
 
+    const validateAndReturnCurrentUserId = () => {
+        const actualCurrentUserId = getCurrentUserId();
+
+        if (savedUserId !== actualCurrentUserId) {
+            // the user has swapped to a different account, and the cache is invalid
+            // save the old, load the new
+            setSavedData(savedUserId);
+            currentSavedData = undefined;
+            savedUserId = actualCurrentUserId;
+            initializeCurrentSavedData(actualCurrentUserId);
+        }
+
+        return actualCurrentUserId;
+    };
+
     const openHistoryWindow = () => {
+        const currentUserId = validateAndReturnCurrentUserId();
+
         const recentFriendHistory = [...currentSavedData.removedFriendHistory];
         const recentGuildHistory = [...currentSavedData.removedGuildHistory];
 
@@ -758,10 +796,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             onConfirm: () => {},
             onCancel: () => {
                 try {
-                    const res = compareAndUpdateCurrentSavedData(getCurrentUserId());
-                    UI.showToast('Updated cache successfully!', { type: 'success' });
+                    compareAndUpdateCurrentSavedData(currentUserId);
+
+                    UI.showToast(Constants.updateCacheToastSuccessText, { type: 'success' });
                 } catch (e) {
-                    UI.showToast('Cache failed to update', { type: 'error' });
+                    UI.showToast(Constants.updateCacheToastFailureText, { type: 'error' });
                 }
             },
         });
@@ -830,7 +869,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     };
 
     const update = () => {
-        const res = compareAndUpdateCurrentSavedData(getCurrentUserId());
+        const currentUserId = validateAndReturnCurrentUserId();
+        const res = compareAndUpdateCurrentSavedData(currentUserId);
+
         if (res && (res.removedFriends.length > 0 || res.removedGuilds.length > 0)) {
             openHistoryWindow();
         }
@@ -852,7 +893,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 );
             }
 
-            initializeCurrentSavedData(getCurrentUserId());
+            savedUserId = getCurrentUserId();
+
+            initializeCurrentSavedData(savedUserId);
 
             setupButtonUI();
 
@@ -869,6 +912,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             rcaModalBtnRemoveObserver = undefined;
             rcaModalEmptyMessage = undefined;
             currentSavedData = undefined;
+            savedUserId = undefined;
             isUpdating = undefined;
             hasViewErrorTriggered = undefined;
             doDeleteBtnTooltipsExist = undefined;

@@ -1,8 +1,14 @@
 # RemovedConnectionAlerts
 
-Keep track of your friends and servers on [BetterDiscord](https://betterdiscord.app), and get notified if you get unfriended or kicked from a server.
+Keep track of your friends and servers on [BetterDiscord](https://betterdiscord.app/plugin/RemovedConnectionAlerts), and get notified if you get unfriended or kicked from a server.
 
 Note: This plugin only tracks removals from when it's installed. It cannot show you your history from before installation.
+
+When you use this plugin, it's a good idea to regularly keep backups of your history files in case something happens to it.
+
+Your history files can be found next to the plugin itself. They are named `RemovedConnectionAlerts_{your Discord user ID number here}.config.json`.
+
+## Credits
 
 Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFriendRemovalAlerts](https://github.com/Metalloriff/BetterDiscordPlugins/tree/master/GuildAndFriendRemovalAlerts). Code written in this project is independent and unrelated. Mostly a passion project and coding exercise.
 
