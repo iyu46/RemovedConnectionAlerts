@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.6.3
+ * @version 0.7.0
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,23 +43,28 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.6.3',
+        version: '0.7.0',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.6.3',
-            type: 'improved',
+            title: '0.7.0',
+            type: 'added',
             items: [
-                'Fixed invalid cache reading when using Discord\'s account switcher',
+                'Added settings menu',
+                'Added button to manually open history window from settings menu',
+                'Added button to import history from Metalloriff\'s legacy GuildAndFriendRemovalAlerts plugin',
+                'Added button to hide the history window button from automatically appearing in Discord',
+                'Added button to trigger a manual backup of the cache file',
             ],
         },
         {
-            title: '0.6.0 - 0.6.2',
+            title: '0.6.0 - 0.6.3',
             type: 'improved',
             items: [
+                'Fixed invalid cache reading when using Discord\'s account switcher',
                 'Plugin no longer crashes when switching channels (thanks Pallen0304!)',
                 'Remove ZLibrary auto-patcher in favour of built-in BD one',
                 'Added removal check at startup',
@@ -149,8 +154,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     let currentSavedData;
     let savedUserId;
     let isUpdating = false;
+    let isImporting = false;
     let hasViewErrorTriggered = false;
     let doDeleteBtnTooltipsExist = false;
+    let settings = {};
+    const importInputRef = React.createRef();
     const isOlderFriendsShadeOpen = false;
     const isOlderGuildsShadeOpen = false;
 
@@ -219,6 +227,13 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         color: var(--header-primary);
         font-size: 1.5rem;
     }
+    .rcaSettingsIcon {
+        width: 16px !important;
+        height: 16px !important;
+    }
+    .rcaImportInput {
+        display: none;
+    }
     `);
 
     /* eslint-disable max-len */
@@ -231,6 +246,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         logDeleteBtn: 'rcaHistoryDeleteBtn',
         logDeleteBtnIconLabel: 'rcaHistoryDeleteBtnIcon',
         logDeleteBtnIconClass: 'winButtonClose-3Q8ZH5 winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
+        settingsIconClass: 'winButtonMinMax-3RsPUg  winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
         emptyMessage: 'rcaModalEmptyMessage',
         emptyMessageText: 'rcaModalEmptyMessageText',
         recentsIcon: 'recentsIcon-F3eO1o',
@@ -266,9 +282,28 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             height: '24',
             viewBox: '0 0 16 16',
         },
+        settingsBtnIcon: {
+            x: '0',
+            y: '0',
+            class: 'icon-2xnN2Y rcaSettingsIcon',
+            'aria-hidden': 'true',
+            role: 'img',
+            width: '16',
+            height: '16',
+            viewBox: '0 0 16 16',
+        },
         modalBtnPath: {
             fill: 'currentColor',
             d: 'M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm6.146-2.854a.5.5 0 0 1 .708 0L14 6.293l1.146-1.147a.5.5 0 0 1 .708.708L14.707 7l1.147 1.146a.5.5 0 0 1-.708.708L14 7.707l-1.146 1.147a.5.5 0 0 1-.708-.708L13.293 7l-1.147-1.146a.5.5 0 0 1 0-.708z',
+        },
+        settingsImportBtnPath: {
+            fill: 'currentColor',
+            d: 'M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm.5 4v1.5H10a.5.5 0 0 1 0 1H8.5V10a.5.5 0 0 1-1 0V8.5H6a.5.5 0 0 1 0-1h1.5V6a.5.5 0 0 1 1 0z',
+        },
+        settingsBackupBtnPath: {
+            fill: 'currentColor',
+            fillRule: 'evenodd',
+            d: 'M8 0a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 4.095 0 5.555 0 7.318 0 9.366 1.708 11 3.781 11H7.5V5.5a.5.5 0 0 1 1 0V11h4.188C14.502 11 16 9.57 16 7.773c0-1.636-1.242-2.969-2.834-3.194C12.923 1.999 10.69 0 8 0zm-.354 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V11h-1v3.293l-2.146-2.147a.5.5 0 0 0-.708.708l3 3z',
         },
     };
 
@@ -287,6 +322,17 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         changelogTitle: `${config.info.name} Changelog`,
         updateCacheToastSuccessText: 'Updated cache successfully!',
         updateCacheToastFailureText: 'Cache failed to update',
+        settingsImportOldHistory: 'Import history from Metalloriff\'s GuildAndFriendRemovalAlerts',
+        settingsManualOpenButton: 'Manually open history window',
+        settingsHideButtonFromView: 'Hide history button from main window',
+        settingsManualBackup: 'Trigger a manual backup of your current history cache',
+        importBackupStart: 'Making a backup of your current history cache...',
+        importBackupSuccessful: 'Backup successful! Attempting to import history...',
+        importBackupFailure: 'Backup failed. Terminating import process',
+        importSuccessful: 'History successfully updated!',
+        importFailure: 'Import process failed',
+        importInvalid: 'File is invalid for import',
+        backupSuccess: 'Backup successful!',
     };
 
     /* eslint-enable max-len */
@@ -314,9 +360,12 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         const savedConfig = Data.load(config.info.name, 'config');
 
         // if there is no savedConfig or local version is more up to date than last-seen version
-        if (!savedConfig || semverComparator(savedConfig?.version, config.info.version)) {
+        if (!savedConfig || !savedConfig.version || semverComparator(savedConfig?.version, config.info.version)) {
             const newConfig = {
                 version: config.info.version,
+                settings: {
+                    hideButton: false,
+                },
             };
 
             Data.save(config.info.name, 'config', newConfig);
@@ -342,7 +391,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return currentSavedDataInterpret;
     };
 
-    const setSavedData = (currentUserId) => {
+    const setSavedData = (currentUserId, backupDate = 0) => {
         const currentSavedDataSnapshot = {
             friendCache: currentSavedData.friendCache,
             guildCache: currentSavedData.guildCache,
@@ -351,7 +400,33 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             removedFriendHistory: currentSavedData.removedFriendHistory,
             removedGuildHistory: currentSavedData.removedGuildHistory,
         };
+        if (backupDate) {
+            // eslint-disable-next-line max-len
+            return Data.save(`${config.info.name}_${currentUserId}_backup_${backupDate}`, 'savedData', currentSavedDataSnapshot);
+        }
         return Data.save(`${config.info.name}_${currentUserId}`, 'savedData', currentSavedDataSnapshot);
+    };
+
+    const getSettingsData = () => {
+        const savedSettingsData = Data.load(config.info.name, 'config');
+
+        if (!savedSettingsData.settings) {
+            savedSettingsData.settings = {
+                hideButton: false,
+            };
+
+            Data.save(config.info.name, 'config', savedSettingsData);
+        }
+
+        return savedSettingsData.settings;
+    };
+
+    const setSettingsData = (data) => {
+        const newConfig = {
+            version: config.info.version,
+            settings: data,
+        };
+        Data.save(config.info.name, 'config', newConfig);
     };
 
     const getFriendsList = () => {
@@ -437,6 +512,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const compareAndUpdateCurrentSavedData = (currentUserId) => {
         if (isUpdating === true) return null;
+        if (isImporting === true) return null;
         isUpdating = true;
         const removedFriends = [];
         const removedGuilds = [];
@@ -631,13 +707,22 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         const removedGuildsAsElements = removedGuilds.map((g) => {
             let avatarURL = g.animatedAvatarURL || g.avatarURL;
             if (!g.icon) avatarURL = undefined;
+
+            let removedDate = '';
+            const timeRemovedUnix = new Date(g.timeRemoved).valueOf();
+            if (timeRemovedUnix < 10000) {
+                removedDate = 'Imported from GuildAndFriendRemovalAlerts';
+            } else {
+                removedDate = new Date(g.timeRemoved).toLocaleString('ja-JP', {
+                    timeZoneName: 'short',
+                });
+            }
+
             return createServerLogEntry({
                 avatarURL,
                 serverName: g.name,
                 ownerName: g.owner,
-                removedDate: new Date(g.timeRemoved).toLocaleString('ja-JP', {
-                    timeZoneName: 'short',
-                }),
+                removedDate,
                 id: g.id,
             });
         });
@@ -650,12 +735,21 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         const removedFriendsAsElements = removedFriends.map((f) => {
             let avatarURL = f.animatedAvatarURL || f.avatarURL;
             if (!f.avatar) avatarURL = undefined;
+
+            let removedDate = '';
+            const timeRemovedUnix = new Date(f.timeRemoved).valueOf();
+            if (timeRemovedUnix < 10000) {
+                removedDate = 'Imported from GuildAndFriendRemovalAlerts';
+            } else {
+                removedDate = new Date(f.timeRemoved).toLocaleString('ja-JP', {
+                    timeZoneName: 'short',
+                });
+            }
+
             return createFriendLogEntry({
                 avatarURL,
                 friendName: f.tag,
-                removedDate: new Date(f.timeRemoved).toLocaleString('ja-JP', {
-                    timeZoneName: 'short',
-                }),
+                removedDate,
                 id: f.id,
             });
         });
@@ -831,6 +925,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const isHelpIconInChannelHeader = (inboxIcon) => inboxIcon?.nextSibling?.className.includes('anchor');
 
     const insertButtonAtLocationWithStyle = () => {
+        if (settings.hideButton === true) return;
         try {
             const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
             const isHelpIconPresent = isHelpIconInChannelHeader(channelHeaderInboxIcon);
@@ -877,14 +972,265 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         }
     };
 
+    const backup = () => {
+        setSavedData(validateAndReturnCurrentUserId(), Date.now());
+        UI.showToast(Constants.backupSuccess, { type: 'success' });
+    };
+
+    const importOldHistory = (e) => {
+        isImporting = true;
+
+        const exit = () => {
+            e.target.value = null;
+            isImporting = false;
+            update();
+        };
+
+        const inputFile = e.target.files && e.target.files[0];
+        if (!inputFile || inputFile.type !== 'application/json') {
+            Logger.warn(config.info.name, 'Failed to start import process due to invalid file');
+            UI.showToast(Constants.importInvalid, { type: 'error' });
+            exit();
+            return;
+        }
+
+        const currentUserId = validateAndReturnCurrentUserId();
+        const date = Date.now();
+
+        const savedData = getSavedData(currentUserId);
+        Logger.info(config.info.name, `Backing up config file for ${savedUserId} at ${date}`);
+        UI.showToast(Constants.importBackupStart, { type: 'info' });
+        try {
+            setSavedData(currentUserId, date);
+        } catch (error) {
+            Logger.warn(config.info.name, 'Failed to backup config file');
+            UI.showToast(Constants.importBackupFailure, { type: 'error' });
+            exit();
+            return;
+        }
+        UI.showToast(Constants.importBackupSuccessful, { type: 'info' });
+
+        const inputFileReader = new FileReader();
+        inputFileReader.onload = (ev) => {
+            try {
+                const inputFileJson = JSON.parse(ev.target.result);
+
+                if (!inputFileJson.removedFriendHistory || !inputFileJson.removedGuildHistory) {
+                    Logger.warn(config.info.name, 'Failed to import to config file');
+                    UI.showToast(Constants.importInvalid, { type: 'error' });
+                    exit();
+                    return;
+                }
+
+                const oldFriendsHistory = inputFileJson.removedFriendHistory.reverse().map((friend, index) => {
+                    const convertedFriend = {
+                        id: friend.id,
+                        tag: friend.tag,
+                        avatar: friend.avatarURL?.split('/').pop().split('.')[0] || '',
+                        avatarURL: friend.avatarURL,
+                        timeRemoved: index,
+                    };
+                    return convertedFriend;
+                });
+
+                const oldGuildsHistory = inputFileJson.removedGuildHistory.reverse().map((guild, index) => {
+                    const convertedGuild = {
+                        id: guild.id,
+                        name: guild.name,
+                        icon: guild.iconURL?.split('/').pop().split('.')[0] || '',
+                        avatarURL: guild.iconURL,
+                        owner: '',
+                        ownerId: guild.ownerId,
+                        timeRemoved: index,
+                    };
+                    return convertedGuild;
+                });
+
+                currentSavedData.removedFriendHistory.unshift(...oldFriendsHistory);
+                currentSavedData.removedGuildHistory.unshift(...oldGuildsHistory);
+
+                setSavedData(currentUserId);
+
+                UI.showToast(Constants.importSuccessful, { type: 'success' });
+                exit();
+            } catch (error2) {
+                currentSavedData = savedData;
+                Logger.warn(config.info.name, 'Failed to import to config file');
+                UI.showToast(Constants.importBackupFailure, { type: 'error' });
+                exit();
+            }
+        };
+
+        inputFileReader.readAsText(inputFile);
+    };
+
+    const openSettingsPanel = () => {
+        const element = React.createElement(
+            'div',
+            {
+                className: CssClasses.container,
+            },
+            [
+                /* Trigger manual backup */
+                React.createElement(
+                    'div',
+                    {
+                        className: CssClasses.item,
+                    },
+                    [
+                        React.createElement(
+                            'div',
+                            {
+                                className: CssClasses.info,
+                            },
+                            React.createElement('h4', null, Constants.settingsManualBackup),
+                        ),
+                        React.createElement('div', {
+                            className: CssClasses.logDeleteBtn,
+                        }, React.createElement('div', {
+                            className: CssClasses.settingsIconClass,
+                            onClick: (e) => {
+                                backup();
+                            },
+                        }, React.createElement(
+                            'svg',
+                            CssClassObjects.settingsBtnIcon,
+                            React.createElement(
+                                'path',
+                                CssClassObjects.settingsBackupBtnPath,
+                            ),
+                        ))),
+                    ],
+                ),
+
+                /* Import previous history from Metalloriff's GuildAndFriendRemovalAlerts */
+                React.createElement(
+                    'div',
+                    {
+                        className: CssClasses.item,
+                    },
+                    [
+                        React.createElement(
+                            'div',
+                            {
+                                className: CssClasses.info,
+                            },
+                            React.createElement('h4', null, Constants.settingsImportOldHistory),
+                        ),
+                        React.createElement('div', {
+                            className: CssClasses.logDeleteBtn,
+                        }, React.createElement('div', {
+                            className: CssClasses.settingsIconClass,
+                            onClick: (e) => {
+                                importInputRef.current.click();
+                            },
+                        }, React.createElement(
+                            'svg',
+                            CssClassObjects.settingsBtnIcon,
+                            React.createElement(
+                                'path',
+                                CssClassObjects.settingsImportBtnPath,
+                            ),
+                        ))),
+                        React.createElement('input', {
+                            className: 'rcaImportInput',
+                            ref: importInputRef,
+                            type: 'file',
+                            onChange: importOldHistory,
+                        }),
+                    ],
+                ),
+
+                /* Manually open history log */
+                React.createElement(
+                    'div',
+                    {
+                        className: CssClasses.item,
+                    },
+                    [
+                        React.createElement(
+                            'div',
+                            {
+                                className: CssClasses.info,
+                            },
+                            React.createElement('h4', null, Constants.settingsManualOpenButton),
+                        ),
+                        React.createElement('div', {
+                            className: CssClasses.logDeleteBtn,
+                        }, React.createElement('div', {
+                            className: CssClasses.settingsIconClass,
+                            onClick: (e) => {
+                                openHistoryWindow();
+                            },
+                        }, React.createElement(
+                            'svg',
+                            CssClassObjects.settingsBtnIcon,
+                            React.createElement(
+                                'path',
+                                CssClassObjects.modalBtnPath,
+                            ),
+                        ))),
+                    ],
+                ),
+
+                /* Hide icon from main view */
+                React.createElement(
+                    'div',
+                    {
+                        className: CssClasses.item,
+                    },
+                    [
+                        React.createElement(
+                            'div',
+                            {
+                                className: CssClasses.info,
+                            },
+                            React.createElement('h4', null, Constants.settingsHideButtonFromView),
+                        ),
+                        React.createElement('div', {
+                            className: CssClasses.logDeleteBtn,
+                        }, React.createElement('input', {
+                            type: 'checkbox',
+                            defaultChecked: settings.hideButton,
+                            onChange: () => {
+                                settings.hideButton = !settings.hideButton;
+
+                                if (settings.hideButton === true) {
+                                    try {
+                                        rcaModalBtnRemoveObserver();
+                                        rcaModalBtn.remove();
+                                    // eslint-disable-next-line no-empty
+                                    } catch (e) {}
+
+                                    rcaModalBtnRemoveObserver = undefined;
+                                } else {
+                                    setupButtonUI();
+                                    rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
+                                        insertButtonAtLocationWithStyle();
+                                    });
+                                }
+
+                                setSettingsData(settings);
+                            },
+                        })),
+                    ],
+                ),
+            ],
+        );
+
+        return element;
+    };
+
     return ({
         getName() { return config.info.name; },
         getAuthor() { return config.info.authors.map((a) => a.name).join(', '); },
         getDescription() { return config.info.description; },
         getVersion() { return config.info.version; },
+        getSettingsPanel() { return openSettingsPanel(); },
         start() {
             Logger.info(config.info.name, `version ${config.info.version} has started.`);
             const lastSavedVersion = getLastSavedVersion();
+            settings = getSettingsData();
             if (lastSavedVersion.showChangelog) {
                 Modals.showChangelogModal(
                     Constants.changelogTitle,
@@ -899,9 +1245,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
             setupButtonUI();
 
-            rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
-                insertButtonAtLocationWithStyle();
-            });
+            if (settings.hideButton === false) {
+                rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
+                    insertButtonAtLocationWithStyle();
+                });
+            }
 
             subscribeTargets.forEach((e) => Dispatcher.subscribe(e, update));
             update();
@@ -920,7 +1268,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             subscribeTargets.forEach((e) => Dispatcher.unsubscribe(e, update));
         },
         onSwitch() {
-            if (hasViewErrorTriggered === false) return;
+            if ((hasViewErrorTriggered === false) || (settings.hideButton === true)) return;
             Logger.warn(config.info.name, 'Attempting to re-render button');
             insertButtonAtLocationWithStyle();
         },
