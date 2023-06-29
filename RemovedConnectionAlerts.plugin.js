@@ -441,7 +441,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 const hasAnimatedAvatarURL = animatedAvatarURL.includes('gif');
                 const filteredUser = {
                     id: user.id,
-                    tag: `${user.username}#${user.discriminator}`,
+                    tag: (user.discriminator != 0) ? `${user.username}#${user.discriminator}` : user.username,
                     avatar: user.avatar,
                     avatarURL: user.getAvatarURL(null, 40, false),
                     animatedAvatarURL: (hasAnimatedAvatarURL) ? animatedAvatarURL : undefined,
@@ -461,7 +461,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
         guilds.forEach((guild) => {
             const owner = UserStore.getUser(guild.ownerId);
-            const ownerName = (owner) ? `${owner.username}#${owner.discriminator}` : '';
+            const ownerName = (owner) ? (owner.discriminator != 0) ? `${owner.username}#${owner.discriminator}` : owner.username : '';
             const filteredGuild = {
                 id: guild.id,
                 name: guild.name,
