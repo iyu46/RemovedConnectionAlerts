@@ -748,7 +748,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
             return createFriendLogEntry({
                 avatarURL,
-                friendName: f.tag,
+                friendName: f.tag.endsWith("#0") ? f.tag.slice(0, -2) : f.tag, // Upgrade old username entries stored in file
                 removedDate,
                 id: f.id,
             });
@@ -1025,7 +1025,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 const oldFriendsHistory = inputFileJson.removedFriendHistory.reverse().map((friend, index) => {
                     const convertedFriend = {
                         id: friend.id,
-                        tag: friend.tag,
+                        tag: friend.tag.endsWith("#0") ? friend.tag.slice(0, -2) : friend.tag, // Upgrade old username entries stored in file
                         avatar: friend.avatarURL?.split('/').pop().split('.')[0] || '',
                         avatarURL: friend.avatarURL,
                         timeRemoved: index,
