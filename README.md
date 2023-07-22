@@ -14,6 +14,16 @@ Inspired by [Metalloriff](https://github.com/Metalloriff) and their [GuildAndFri
 
 Thank you [programmer2514](https://github.com/programmer2514) and their [CollapsibleUI](https://github.com/programmer2514/BetterDiscord-CollapsibleUI) for helping me out with UI things as well!
 
+## Settings/Importing
+
+Valid history files from Metalloriff's GuildAndFriendRemovalAlerts plugin can be imported into RemovedConnectionAlerts.
+
+The file you want to select will be named similar to `GuildAndFriendRemovalAlerts_(numbers).config.json`.
+
+Use the import option in the settings menu as pictured below:
+
+![RemovedConnectionAlerts settings menu](https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/screenshots/settings.png)
+
 ## Usage
 
 Access your history by clicking this button, next to your inbox icon:
