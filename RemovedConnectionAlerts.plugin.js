@@ -53,7 +53,7 @@ const config = {
             title: '0.7.1',
             type: 'added',
             items: [
-                'Added support for the new Discord username system',
+                'Added support for the new Discord username system (thanks Salty-Coder!)',
             ],
         },
         {
@@ -448,7 +448,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 const hasAnimatedAvatarURL = animatedAvatarURL.includes('gif');
                 const filteredUser = {
                     id: user.id,
-                    tag: (user.discriminator != 0) ? `${user.username}#${user.discriminator}` : user.username,
+                    tag: (user.discriminator !== 0) ? `${user.username}#${user.discriminator}` : user.username,
                     avatar: user.avatar,
                     avatarURL: user.getAvatarURL(null, 40, false),
                     animatedAvatarURL: (hasAnimatedAvatarURL) ? animatedAvatarURL : undefined,
@@ -468,7 +468,14 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
         guilds.forEach((guild) => {
             const owner = UserStore.getUser(guild.ownerId);
-            const ownerName = (owner) ? (owner.discriminator != 0) ? `${owner.username}#${owner.discriminator}` : owner.username : '';
+            let ownerName = '';
+            if (owner) {
+                if (owner.discriminator !== 0) {
+                    ownerName = `${owner.username}#${owner.discriminator}`;
+                } else {
+                    ownerName = owner.username;
+                }
+            }
             const filteredGuild = {
                 id: guild.id,
                 name: guild.name,
@@ -540,8 +547,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             cachedFriendsDiffSet.forEach((oldFriendId) => {
                 const oldFriend = cachedFriends[oldFriendId];
                 if (oldFriend) {
+                    const globalName = UserStore.getUser(oldFriendId.toString())?.globalName;
                     const time = new Date();
                     oldFriend.timeRemoved = time;
+                    oldFriend.globalName = globalName;
                     removedFriends.push(oldFriend);
                 }
             });
@@ -689,6 +698,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         friendName = '',
         removedDate = '',
         id = '',
+        globalName = '',
     }) => React.createElement(
         'div',
         {
@@ -703,7 +713,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             {
                 className: CssClasses.info,
             },
-            React.createElement('h4', null, friendName),
+            React.createElement('h4', null, globalName ? `${globalName} (@${friendName})` : friendName),
             React.createElement('h4', null, `Removed at: ${removedDate}`),
         ),
         createLogEntryDeleteBtn(id, removedDate, true),
@@ -755,9 +765,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
             return createFriendLogEntry({
                 avatarURL,
-                friendName: f.tag.endsWith("#0") ? f.tag.slice(0, -2) : f.tag, // Upgrade old username entries stored in file
+                friendName: f.tag.endsWith('#0') ? f.tag.slice(0, -2) : f.tag, // Upgrade old username entries stored in file
                 removedDate,
                 id: f.id,
+                globalName: f.globalName,
             });
         });
 
@@ -1032,7 +1043,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 const oldFriendsHistory = inputFileJson.removedFriendHistory.reverse().map((friend, index) => {
                     const convertedFriend = {
                         id: friend.id,
-                        tag: friend.tag.endsWith("#0") ? friend.tag.slice(0, -2) : friend.tag, // Upgrade old username entries stored in file
+                        tag: friend.tag.endsWith('#0') ? friend.tag.slice(0, -2) : friend.tag, // Upgrade old username entries stored in file
                         avatar: friend.avatarURL?.split('/').pop().split('.')[0] || '',
                         avatarURL: friend.avatarURL,
                         timeRemoved: index,
