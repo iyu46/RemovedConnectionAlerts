@@ -4,7 +4,7 @@ Keep track of your friends and servers on [BetterDiscord](https://betterdiscord.
 
 Note: This plugin only tracks removals from when it's installed. It cannot show you your history from before installation.
 
-When you use this plugin, it's a good idea to regularly keep backups of your history files in case something happens to it.
+When you use this plugin, it's a good idea to regularly keep backups of your history files in case something happens to it. Backups can be done in the plugin settings as shown below.
 
 Your history files can be found next to the plugin itself. They are named `RemovedConnectionAlerts_{your Discord user ID number here}.config.json`.
 
