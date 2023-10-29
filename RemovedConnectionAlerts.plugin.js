@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.7.1
+ * @version 0.7.2
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,23 +43,27 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.7.1',
+        version: '0.7.2',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.7.1',
-            type: 'added',
+            title: '0.7.2',
+            type: 'improved',
             items: [
-                'Added support for the new Discord username system (thanks Salty-Coder!)',
+                'Fixed problems caused by changes to Discord',
+                'Replaced obsolete "Update cache" button on UI with "Create manual backup"',
+                'In doing the above, moved "Update cache" to settings menu, replacing the old manual backup button',
+                'The buttons in the main UI and the settings UI are 1000% pumpkin shaped now (it\'s a bug that is noncritical but nothing is broken so it\'s totally fine',
             ],
         },
         {
-            title: '0.7.0',
+            title: '0.7.0 - 0.7.1',
             type: 'added',
             items: [
+                'Added support for the new Discord username system (thanks Salty-Coder!)',
                 'Added settings menu',
                 'Added button to manually open history window from settings menu',
                 'Added button to import history from Metalloriff\'s legacy GuildAndFriendRemovalAlerts plugin',
@@ -252,13 +256,13 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         header: 'rcaHistoryHeader',
         logDeleteBtn: 'rcaHistoryDeleteBtn',
         logDeleteBtnIconLabel: 'rcaHistoryDeleteBtnIcon',
-        logDeleteBtnIconClass: 'winButtonClose-3Q8ZH5 winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
-        settingsIconClass: 'winButtonMinMax-3RsPUg  winButton-3UMjdg flexCenter-1Mwsxg flex-3BkGQD justifyCenter-rrurWZ alignCenter-14kD11 rcaHistoryDeleteBtnIcon',
+        logDeleteBtnIconClass: 'winButtonClose__73489 winButton__88672 rcaHistoryDeleteBtnIcon',
+        settingsIconClass: 'winButtonMinMax__72f36 winButton__88672 rcaHistoryDeleteBtnIcon',
         emptyMessage: 'rcaModalEmptyMessage',
         emptyMessageText: 'rcaModalEmptyMessageText',
-        recentsIcon: 'recentsIcon-F3eO1o',
-        toolbarIcon: 'iconWrapper-2awDjA clickable-ZD7xvu',
-        voiceButton: 'button-1fGHAH',
+        recentsIcon: 'recentsIcon__3c4cf',
+        toolbarIcon: 'iconWrapper_af9215 clickable_d23a1a',
+        voiceButton: 'button__6d958',
     };
 
     const CssClassObjects = {
@@ -282,7 +286,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         modalBtnIcon: {
             x: '0',
             y: '0',
-            class: 'icon-2xnN2Y',
+            class: 'icon__4cb88',
             'aria-hidden': 'true',
             role: 'img',
             width: '24',
@@ -292,7 +296,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         settingsBtnIcon: {
             x: '0',
             y: '0',
-            class: 'icon-2xnN2Y rcaSettingsIcon',
+            class: 'icon__4cb88 rcaSettingsIcon',
             'aria-hidden': 'true',
             role: 'img',
             width: '16',
@@ -322,7 +326,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         olderFriends: 'History of removed friends',
         olderServers: 'History of removed servers',
         modalConfirm: 'Okay',
-        modalCancel: 'Update cache',
+        modalCancel: 'Create backup of history',
         modalBtnTooltipText: 'Removal History',
         svgSourceSadge: 'http://www.w3.org/2000/svg',
         defaultdiscordAvatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
@@ -332,7 +336,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         settingsImportOldHistory: 'Import history from Metalloriff\'s GuildAndFriendRemovalAlerts',
         settingsManualOpenButton: 'Manually open history window',
         settingsHideButtonFromView: 'Hide history button from main window',
-        settingsManualBackup: 'Trigger a manual backup of your current history cache',
+        settingsManualUpdate: 'Trigger a manual update for your current history cache',
         importBackupStart: 'Making a backup of your current history cache...',
         importBackupSuccessful: 'Backup successful! Attempting to import history...',
         importBackupFailure: 'Backup failed. Terminating import process',
@@ -832,6 +836,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return actualCurrentUserId;
     };
 
+    const backup = () => {
+        setSavedData(validateAndReturnCurrentUserId(), Date.now());
+        UI.showToast(Constants.backupSuccess, { type: 'success' });
+    };
+
     const openHistoryWindow = () => {
         const currentUserId = validateAndReturnCurrentUserId();
 
@@ -907,13 +916,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             cancelText: Constants.modalCancel,
             onConfirm: () => {},
             onCancel: () => {
-                try {
-                    compareAndUpdateCurrentSavedData(currentUserId);
-
-                    UI.showToast(Constants.updateCacheToastSuccessText, { type: 'success' });
-                } catch (e) {
-                    UI.showToast(Constants.updateCacheToastFailureText, { type: 'error' });
-                }
+                backup();
             },
         });
 
@@ -988,11 +991,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         if (res && (res.removedFriends.length > 0 || res.removedGuilds.length > 0)) {
             openHistoryWindow();
         }
-    };
-
-    const backup = () => {
-        setSavedData(validateAndReturnCurrentUserId(), Date.now());
-        UI.showToast(Constants.backupSuccess, { type: 'success' });
     };
 
     const importOldHistory = (e) => {
@@ -1089,7 +1087,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 className: CssClasses.container,
             },
             [
-                /* Trigger manual backup */
+                /* Trigger manual update */
                 React.createElement(
                     'div',
                     {
@@ -1101,14 +1099,21 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                             {
                                 className: CssClasses.info,
                             },
-                            React.createElement('h4', null, Constants.settingsManualBackup),
+                            React.createElement('h4', null, Constants.settingsManualUpdate),
                         ),
                         React.createElement('div', {
                             className: CssClasses.logDeleteBtn,
                         }, React.createElement('div', {
                             className: CssClasses.settingsIconClass,
                             onClick: (e) => {
-                                backup();
+                                try {
+                                    const currentUserId = validateAndReturnCurrentUserId();
+                                    compareAndUpdateCurrentSavedData(currentUserId);
+
+                                    UI.showToast(Constants.updateCacheToastSuccessText, { type: 'success' });
+                                } catch (err) {
+                                    UI.showToast(Constants.updateCacheToastFailureText, { type: 'error' });
+                                }
                             },
                         }, React.createElement(
                             'svg',
