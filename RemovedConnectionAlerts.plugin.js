@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.7.2
+ * @version 0.8.0
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,26 +43,30 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.7.2',
+        version: '0.8.0',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.7.2',
+            title: '0.8.0',
             type: 'improved',
+            items: [
+                'Fixed problems caused by changes to Discord (thanks re11ding!)',
+                'Fixed the pumpkin button problem',
+                'Should fix the button disappearing sometimes',
+                'Added catch and information when history cache can\'t be read',
+            ],
+        },
+        {
+            title: '0.7.0 - 0.7.2',
+            type: 'added',
             items: [
                 'Fixed problems caused by changes to Discord',
                 'Replaced obsolete "Update cache" button on UI with "Create manual backup"',
                 'In doing the above, moved "Update cache" to settings menu, replacing the old manual backup button',
                 'The buttons in the main UI and the settings UI are 1000% pumpkin shaped now (it\'s a bug that is noncritical but nothing is broken so it\'s totally fine',
-            ],
-        },
-        {
-            title: '0.7.0 - 0.7.1',
-            type: 'added',
-            items: [
                 'Added support for the new Discord username system (thanks Salty-Coder!)',
                 'Added settings menu',
                 'Added button to manually open history window from settings menu',
@@ -223,8 +227,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         padding-right: 8px;
     }
     .rcaHistoryDeleteBtnIcon {
-        top: 0px;
-        width: 22px;
+        top: 0px !Important;
+        width: 22px !important;
+        height: 22px !important;
         border: var(--interactive-normal) solid 2px;
         border-radius: 50%;
     }
@@ -237,6 +242,9 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     .rcaModalEmptyMessageText {
         color: var(--header-primary);
         font-size: 1.5rem;
+    }
+    .rcaModalFailureMessageText {
+        color: var(--header-primary);
     }
     .rcaSettingsIcon {
         width: 16px !important;
@@ -256,13 +264,15 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         header: 'rcaHistoryHeader',
         logDeleteBtn: 'rcaHistoryDeleteBtn',
         logDeleteBtnIconLabel: 'rcaHistoryDeleteBtnIcon',
-        logDeleteBtnIconClass: 'winButtonClose__73489 winButton__88672 rcaHistoryDeleteBtnIcon',
-        settingsIconClass: 'winButtonMinMax__72f36 winButton__88672 rcaHistoryDeleteBtnIcon',
+        logDeleteBtnIconClass: 'rcaHistoryDeleteBtnIcon winButtonClose__6396d winButton_f17fb6',
+        settingsIconClass: 'rcaHistoryDeleteBtnIcon winButtonMinMax_caf9c8 winButton_f17fb6',
         emptyMessage: 'rcaModalEmptyMessage',
         emptyMessageText: 'rcaModalEmptyMessageText',
-        recentsIcon: 'recentsIcon__3c4cf',
-        toolbarIcon: 'iconWrapper_af9215 clickable_d23a1a',
-        voiceButton: 'button__6d958',
+        failureMessageText: 'rcaModalFailureMessageText',
+        recentsIcon: 'recentsIcon_a585d7',
+        toolbarIcon: 'iconWrapper_de6cd1 clickable_ce0925',
+        voiceButton: 'button_ab327f',
+        nitroTopBar: 'upperContainer__57565',
     };
 
     const CssClassObjects = {
@@ -320,6 +330,12 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const Constants = { // aka locale_EN
         emptyMessageText: 'Nothing to see here for now!',
+        // failureMessageText: 'Uh oh! It looks like your history file has been corrupted, and RemovedConnectionAlerts cannot start. This can be mitigated with frequent backing up of your history file. There are a couple things you can do to proceed:<br /><br />1. Manually overwrite your history file with a backup. Both can be found in your BetterDiscord plugins folder. The corrupted file to replace is named "RemovedConnectionAlerts_{your Discord user ID number here}.config.json".<br /><br />2. Let RemovedConnectionAlerts attempt to automatically recover from the latest backup (experimental, may also fail). Click the button on the left below to do this. <br /><br />3. Delete your corrupted history file and start anew.<br /><br />A restart is recommended after performing any of these operations!',
+        failureMessageText: 'Uh oh! It looks like your history file has been corrupted, and RemovedConnectionAlerts cannot start. This can be mitigated with frequent backing up of your history file. There are a couple things you can do to proceed:<br /><br />1. Manually overwrite your history file with a backup. Both can be found in your BetterDiscord plugins folder. The corrupted file to replace is named "RemovedConnectionAlerts_{your Discord user ID number here}.config.json". Your Discord ID number is shown on the bottom to the left. <br /><br />2. Delete your corrupted history file and start anew.<br /><br />A restart is required after performing any of these operations!',
+        autoRecoveryNewestAttempt: 'Attempting to import history from first automatic backup file...',
+        autoRecoverySecondNewestAttempt: 'Newest import failed. Attempting import from second automatic backup file...',
+        autoRecoverySuccess: 'Recovery successful! Try restarting BetterDiscord!',
+        autoRecoveryFailure: 'Recovery failed.',
         deleteBtnTooltipText: 'Ctrl+Shift+Click to permanently delete!',
         recentFriends: 'Recently removed friends',
         recentServers: 'Recently removed servers',
@@ -327,6 +343,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         olderServers: 'History of removed servers',
         modalConfirm: 'Okay',
         modalCancel: 'Create backup of history',
+        modalFailureCancel: 'Attempt automatic recovery',
         modalBtnTooltipText: 'Removal History',
         svgSourceSadge: 'http://www.w3.org/2000/svg',
         defaultdiscordAvatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
@@ -386,8 +403,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return { version: savedConfig.version, showChangelog: false };
     };
 
-    const getSavedData = (currentUserId) => {
-        const savedData = Data.load(`${config.info.name}_${currentUserId}`, 'savedData');
+    const getSavedData = (currentUserId, backup = '') => {
+        const fileNameString = `${config.info.name}_${currentUserId}${backup}`;
+        const savedData = Data.load(fileNameString, 'savedData');
+        Logger.info(config.info.name, fileNameString, savedData);
         if (!savedData) return undefined;
 
         const currentSavedDataInterpret = {
@@ -402,7 +421,38 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         return currentSavedDataInterpret;
     };
 
-    const setSavedData = (currentUserId, backupDate = 0) => {
+    const setSavedData = (currentUserId, backupDate = 0, dataToSave = {}) => {
+        if (Object.keys(dataToSave).length) {
+            const dataToSaveInterpret = {
+                friendCache: dataToSave.friendCache,
+                guildCache: dataToSave.guildCache,
+                friendCacheSet: new Set(dataToSave.friendCacheSet),
+                guildCacheSet: new Set(dataToSave.guildCacheSet),
+                removedFriendHistory: dataToSave.removedFriendHistory,
+                removedGuildHistory: dataToSave.removedGuildHistory,
+            };
+            const configFileName = `${config.info.name}_${currentUserId}_autoBackup_${backupDate}`;
+            try {
+                return Data.save(
+                    configFileName,
+                    'savedData',
+                    dataToSaveInterpret,
+                );
+            } catch (e) {
+                Logger.warn(config.info.name, 'Failed to save file, forcing', configFileName, e);
+                Data.delete(
+                    configFileName,
+                    'savedData',
+                    dataToSaveInterpret,
+                );
+                return Data.save(
+                    configFileName,
+                    'savedData',
+                    dataToSaveInterpret,
+                );
+            }
+        }
+
         const currentSavedDataSnapshot = {
             friendCache: currentSavedData.friendCache,
             guildCache: currentSavedData.guildCache,
@@ -411,11 +461,43 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             removedFriendHistory: currentSavedData.removedFriendHistory,
             removedGuildHistory: currentSavedData.removedGuildHistory,
         };
+
         if (backupDate) {
             // eslint-disable-next-line max-len
-            return Data.save(`${config.info.name}_${currentUserId}_backup_${backupDate}`, 'savedData', currentSavedDataSnapshot);
+            const configFileName = `${config.info.name}_${currentUserId}_backup_${backupDate}`;
+            try {
+                return Data.save(configFileName, 'savedData', currentSavedDataSnapshot);
+            } catch (e) {
+                Logger.warn(config.info.name, 'Failed to save file, forcing', configFileName, e);
+                Data.delete(
+                    configFileName,
+                    'savedData',
+                    currentSavedDataSnapshot,
+                );
+                return Data.save(
+                    configFileName,
+                    'savedData',
+                    currentSavedDataSnapshot,
+                );
+            }
         }
-        return Data.save(`${config.info.name}_${currentUserId}`, 'savedData', currentSavedDataSnapshot);
+
+        const configFileName = `${config.info.name}_${currentUserId}`;
+        try {
+            return Data.save(configFileName, 'savedData', currentSavedDataSnapshot);
+        } catch (e) {
+            Logger.warn(config.info.name, 'Failed to save file, forcing', configFileName, e);
+            Data.delete(
+                configFileName,
+                'savedData',
+                currentSavedDataSnapshot,
+            );
+            return Data.save(
+                configFileName,
+                'savedData',
+                currentSavedDataSnapshot,
+            );
+        }
     };
 
     const getSettingsData = () => {
@@ -509,6 +591,17 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         Logger.info(config.info.name, `Caching ${friendsList.friendsSet.size} friends and ${guildsList.guildsSet.size} guilds`);
     };
 
+    const createRecentBackups = (currentUserId, savedData0) => {
+        // execution of this function should mean at least savedData0 is safe and intact
+        const savedData1 = Data.load(`${config.info.name}_${currentUserId}_autoBackup_newest`, 'savedData');
+        // const savedData2 = Data.load(`${config.info.name}_${currentUserId}_backup_secondNewest`, 'savedData');
+
+        setSavedData(currentUserId, 'newest', savedData0);
+        if (savedData1) {
+            setSavedData(currentUserId, 'secondNewest', savedData1);
+        }
+    };
+
     const initializeCurrentSavedData = (currentUserId) => {
         const savedDataInFile = getSavedData(currentUserId);
         const savedData = {
@@ -525,6 +618,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             populateEmptyCurrentSavedData();
         } else {
             currentSavedData = savedDataInFile;
+            // createRecentBackups(currentUserId, savedDataInFile); !TODO
         }
     };
 
@@ -605,6 +699,16 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         rcaModalEmptyMessageText.setAttribute('class', CssClasses.emptyMessageText);
         rcaModalEmptyMessageText.innerHTML = Constants.emptyMessageText;
         rcaModalEmptyMessage.appendChild(rcaModalEmptyMessageText);
+    };
+
+    const createFailureMessageElem = () => {
+        const element = document.createElement('div');
+        element.setAttribute('class', CssClasses.emptyMessage);
+        const rcaModalFailureMessageText = document.createElement('p');
+        rcaModalFailureMessageText.setAttribute('class', CssClasses.failureMessageText);
+        rcaModalFailureMessageText.innerHTML = Constants.failureMessageText;
+        element.appendChild(rcaModalFailureMessageText);
+        return element;
     };
 
     const deleteLogEntry = (deleteId, removedDate, isFriend) => {
@@ -841,6 +945,42 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         UI.showToast(Constants.backupSuccess, { type: 'success' });
     };
 
+    const attemptRecovery = () => {
+        const currentUserId = getCurrentUserId();
+        Logger.info(config.info.name, `Attempting recovery of config file for ${savedUserId}`);
+        Logger.info(config.info.name, 'Attempting access of first newest automatic backup');
+        UI.showToast(Constants.autoRecoveryNewestAttempt, { type: 'info' });
+        try {
+            const savedData = getSavedData(currentUserId, '_autoBackup_newest');
+            if (savedData) {
+                currentSavedData = savedData;
+                // eslint-disable-next-line max-len
+                setSavedData(currentUserId);
+                Logger.info(config.info.name, 'Recovery of first newest automatic backup successful', savedData);
+                UI.showToast(Constants.autoRecoverySuccess, { type: 'info' });
+            } else {
+                throw new Error('First recovery failed due to empty');
+            }
+        } catch (e) {
+            Logger.warn(config.info.name, 'Recovery of first newest automatic backup failed, attempting second', e);
+            UI.showToast(Constants.autoRecoverySecondNewestAttempt, { type: 'error' });
+            try {
+                const savedData2 = getSavedData(currentUserId, '_autoBackup_secondNewest');
+                if (savedData2) {
+                    currentSavedData = savedData2;
+                    setSavedData(currentUserId);
+                    Logger.info(config.info.name, 'Recovery of second newest automatic backup successful', savedData2);
+                    UI.showToast(Constants.autoRecoverySuccess, { type: 'info' });
+                } else {
+                    throw new Error('Second recovery failed due to empty');
+                }
+            } catch (e2) {
+                Logger.warn(config.info.name, 'Recovery of second newest automatic backup failed', e2);
+                UI.showToast(Constants.autoRecoveryFailure, { type: 'error' });
+            }
+        }
+    };
+
     const openHistoryWindow = () => {
         const currentUserId = validateAndReturnCurrentUserId();
 
@@ -923,6 +1063,31 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         doDeleteBtnTooltipsExist = false;
     };
 
+    const showFailureLoadingModal = () => {
+        let element = document.createElement('div');
+        const failureMessage = createFailureMessageElem();
+        element.setAttribute('class', CssClasses.container);
+        element.appendChild(failureMessage);
+
+        element = React.createElement(
+            'div',
+            {
+                className: CssClasses.container,
+                dangerouslySetInnerHTML: { __html: element.outerHTML },
+            },
+        );
+
+        showConfirmationModal(config.info.name, element, {
+            confirmText: Constants.modalConfirm,
+            // cancelText: Constants.modalFailureCancel,
+            cancelText: getCurrentUserId(),
+            onConfirm: () => {},
+            // onCancel: () => {
+            //     attemptRecovery();
+            // },
+        });
+    };
+
     // original code from https://github.com/BetterDiscord/BetterDiscord/blob/9e0f274b504d155b73c4c3148df5173bd8fad3bc/renderer/src/modules/dommanager.js#L182
     const onRemovedPersistent = (node, callback) => {
         const observer = new MutationObserver((mutations) => {
@@ -943,20 +1108,32 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const getChannelHeaderInboxIcon = () => document.querySelector(`.${CssClasses.recentsIcon}`);
 
+    const getNitroHeaderContainer = () => document.querySelector(`.${CssClasses.nitroTopBar}`);
+
     const isHelpIconInChannelHeader = (inboxIcon) => inboxIcon?.nextSibling?.className.includes('anchor');
 
     const insertButtonAtLocationWithStyle = () => {
         if (settings.hideButton === true) return;
         try {
             const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
-            const isHelpIconPresent = isHelpIconInChannelHeader(channelHeaderInboxIcon);
-            const rcaModalBtnClassName = Utils.className(
-                { [CssClasses.voiceButton]: (!isHelpIconPresent) },
-                CssClasses.toolbarIcon,
-            );
-            rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
-            channelHeaderInboxIcon?.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
-            hasViewErrorTriggered = false;
+            if (channelHeaderInboxIcon) {
+                const isHelpIconPresent = isHelpIconInChannelHeader(channelHeaderInboxIcon);
+                const rcaModalBtnClassName = Utils.className(
+                    { [CssClasses.voiceButton]: (!isHelpIconPresent) },
+                    CssClasses.toolbarIcon,
+                );
+                rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
+                channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
+                hasViewErrorTriggered = false;
+            } else {
+                const nitroTopBar = getNitroHeaderContainer();
+                const rcaModalBtnClassName = Utils.className(
+                    CssClasses.toolbarIcon,
+                );
+                rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
+                nitroTopBar.lastChild.insertAdjacentElement('afterend', rcaModalBtn);
+                hasViewErrorTriggered = false;
+            }
         } catch (e) {
             Logger.stacktrace(config.info.name, 'View does not contain anchorable elements', e);
             hasViewErrorTriggered = true;
@@ -1264,18 +1441,22 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
             savedUserId = getCurrentUserId();
 
-            initializeCurrentSavedData(savedUserId);
+            try {
+                initializeCurrentSavedData(savedUserId);
 
-            setupButtonUI();
+                setupButtonUI();
 
-            if (settings.hideButton === false) {
-                rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
-                    insertButtonAtLocationWithStyle();
-                });
+                if (settings.hideButton === false) {
+                    rcaModalBtnRemoveObserver = onRemovedPersistent(rcaModalBtn, () => {
+                        insertButtonAtLocationWithStyle();
+                    });
+                }
+
+                subscribeTargets.forEach((e) => Dispatcher.subscribe(e, update));
+                update();
+            } catch (e) {
+                showFailureLoadingModal();
             }
-
-            subscribeTargets.forEach((e) => Dispatcher.subscribe(e, update));
-            update();
         },
         stop() {
             rcaModalBtnRemoveObserver();
