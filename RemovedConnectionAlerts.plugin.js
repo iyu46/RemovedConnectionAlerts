@@ -330,7 +330,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const Constants = { // aka locale_EN
         emptyMessageText: 'Nothing to see here for now!',
-        // failureMessageText: 'Uh oh! It looks like your history file has been corrupted, and RemovedConnectionAlerts cannot start. This can be mitigated with frequent backing up of your history file. There are a couple things you can do to proceed:<br /><br />1. Manually overwrite your history file with a backup. Both can be found in your BetterDiscord plugins folder. The corrupted file to replace is named "RemovedConnectionAlerts_{your Discord user ID number here}.config.json".<br /><br />2. Let RemovedConnectionAlerts attempt to automatically recover from the latest backup (experimental, may also fail). Click the button on the left below to do this. <br /><br />3. Delete your corrupted history file and start anew.<br /><br />A restart is recommended after performing any of these operations!',
         failureMessageText: 'Uh oh! It looks like your history file has been corrupted, and RemovedConnectionAlerts cannot start. This can be mitigated with frequent backing up of your history file. There are a couple things you can do to proceed:<br /><br />1. Manually overwrite your history file with a backup. Both can be found in your BetterDiscord plugins folder. The corrupted file to replace is named "RemovedConnectionAlerts_{your Discord user ID number here}.config.json". Your Discord ID number is shown on the bottom to the left. <br /><br />2. Delete your corrupted history file and start anew.<br /><br />A restart is required after performing any of these operations!',
         autoRecoveryNewestAttempt: 'Attempting to import history from first automatic backup file...',
         autoRecoverySecondNewestAttempt: 'Newest import failed. Attempting import from second automatic backup file...',
@@ -406,7 +405,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const getSavedData = (currentUserId, backup = '') => {
         const fileNameString = `${config.info.name}_${currentUserId}${backup}`;
         const savedData = Data.load(fileNameString, 'savedData');
-        Logger.info(config.info.name, fileNameString, savedData);
         if (!savedData) return undefined;
 
         const currentSavedDataInterpret = {
@@ -432,25 +430,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 removedGuildHistory: dataToSave.removedGuildHistory,
             };
             const configFileName = `${config.info.name}_${currentUserId}_autoBackup_${backupDate}`;
-            try {
-                return Data.save(
-                    configFileName,
-                    'savedData',
-                    dataToSaveInterpret,
-                );
-            } catch (e) {
-                Logger.warn(config.info.name, 'Failed to save file, forcing', configFileName, e);
-                Data.delete(
-                    configFileName,
-                    'savedData',
-                    dataToSaveInterpret,
-                );
-                return Data.save(
-                    configFileName,
-                    'savedData',
-                    dataToSaveInterpret,
-                );
-            }
+            return Data.save(
+                configFileName,
+                'savedData',
+                dataToSaveInterpret,
+            );
         }
 
         const currentSavedDataSnapshot = {
@@ -465,39 +449,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         if (backupDate) {
             // eslint-disable-next-line max-len
             const configFileName = `${config.info.name}_${currentUserId}_backup_${backupDate}`;
-            try {
-                return Data.save(configFileName, 'savedData', currentSavedDataSnapshot);
-            } catch (e) {
-                Logger.warn(config.info.name, 'Failed to save file, forcing', configFileName, e);
-                Data.delete(
-                    configFileName,
-                    'savedData',
-                    currentSavedDataSnapshot,
-                );
-                return Data.save(
-                    configFileName,
-                    'savedData',
-                    currentSavedDataSnapshot,
-                );
-            }
+            return Data.save(configFileName, 'savedData', currentSavedDataSnapshot);
         }
 
         const configFileName = `${config.info.name}_${currentUserId}`;
-        try {
-            return Data.save(configFileName, 'savedData', currentSavedDataSnapshot);
-        } catch (e) {
-            Logger.warn(config.info.name, 'Failed to save file, forcing', configFileName, e);
-            Data.delete(
-                configFileName,
-                'savedData',
-                currentSavedDataSnapshot,
-            );
-            return Data.save(
-                configFileName,
-                'savedData',
-                currentSavedDataSnapshot,
-            );
-        }
+        return Data.save(configFileName, 'savedData', currentSavedDataSnapshot);
     };
 
     const getSettingsData = () => {
@@ -589,17 +545,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
         // eslint-disable-next-line max-len
         Logger.info(config.info.name, `Caching ${friendsList.friendsSet.size} friends and ${guildsList.guildsSet.size} guilds`);
-    };
-
-    const createRecentBackups = (currentUserId, savedData0) => {
-        // execution of this function should mean at least savedData0 is safe and intact
-        const savedData1 = Data.load(`${config.info.name}_${currentUserId}_autoBackup_newest`, 'savedData');
-        // const savedData2 = Data.load(`${config.info.name}_${currentUserId}_backup_secondNewest`, 'savedData');
-
-        setSavedData(currentUserId, 'newest', savedData0);
-        if (savedData1) {
-            setSavedData(currentUserId, 'secondNewest', savedData1);
-        }
     };
 
     const initializeCurrentSavedData = (currentUserId) => {
@@ -945,45 +890,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         UI.showToast(Constants.backupSuccess, { type: 'success' });
     };
 
-    const attemptRecovery = () => {
-        const currentUserId = getCurrentUserId();
-        Logger.info(config.info.name, `Attempting recovery of config file for ${savedUserId}`);
-        Logger.info(config.info.name, 'Attempting access of first newest automatic backup');
-        UI.showToast(Constants.autoRecoveryNewestAttempt, { type: 'info' });
-        try {
-            const savedData = getSavedData(currentUserId, '_autoBackup_newest');
-            if (savedData) {
-                currentSavedData = savedData;
-                // eslint-disable-next-line max-len
-                setSavedData(currentUserId);
-                Logger.info(config.info.name, 'Recovery of first newest automatic backup successful', savedData);
-                UI.showToast(Constants.autoRecoverySuccess, { type: 'info' });
-            } else {
-                throw new Error('First recovery failed due to empty');
-            }
-        } catch (e) {
-            Logger.warn(config.info.name, 'Recovery of first newest automatic backup failed, attempting second', e);
-            UI.showToast(Constants.autoRecoverySecondNewestAttempt, { type: 'error' });
-            try {
-                const savedData2 = getSavedData(currentUserId, '_autoBackup_secondNewest');
-                if (savedData2) {
-                    currentSavedData = savedData2;
-                    setSavedData(currentUserId);
-                    Logger.info(config.info.name, 'Recovery of second newest automatic backup successful', savedData2);
-                    UI.showToast(Constants.autoRecoverySuccess, { type: 'info' });
-                } else {
-                    throw new Error('Second recovery failed due to empty');
-                }
-            } catch (e2) {
-                Logger.warn(config.info.name, 'Recovery of second newest automatic backup failed', e2);
-                UI.showToast(Constants.autoRecoveryFailure, { type: 'error' });
-            }
-        }
-    };
-
     const openHistoryWindow = () => {
-        const currentUserId = validateAndReturnCurrentUserId();
-
         const recentFriendHistory = [...currentSavedData.removedFriendHistory];
         const recentGuildHistory = [...currentSavedData.removedGuildHistory];
 
@@ -1079,12 +986,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
         showConfirmationModal(config.info.name, element, {
             confirmText: Constants.modalConfirm,
-            // cancelText: Constants.modalFailureCancel,
             cancelText: getCurrentUserId(),
             onConfirm: () => {},
-            // onCancel: () => {
-            //     attemptRecovery();
-            // },
         });
     };
 
