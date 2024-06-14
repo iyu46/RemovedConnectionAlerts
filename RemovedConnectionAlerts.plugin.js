@@ -1111,12 +1111,18 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             try {
                 const inputFileJson = JSON.parse(ev.target.result);
 
-                if (!inputFileJson.removedFriendHistory || !inputFileJson.removedGuildHistory) {
-                    Logger.warn(config.info.name, 'Failed to import to config file');
-                    UI.showToast(Constants.importInvalid, { type: 'error' });
-                    exit();
-                    return;
-                }
+				if (!inputFileJson.removedGuildHistory || !inputFileJson.removedFriendHistory) {
+					if (inputFileJson.settings) {
+					inputFileJson.removedFriendHistory = inputFileJson.settings.removedFriendHistory;
+					inputFileJson.removedGuildHistory = inputFileJson.settings.removedGuildHistory;
+					}
+				}
+			    if (!inputFileJson.removedFriendHistory || !inputFileJson.removedGuildHistory) {
+					Logger.warn(config.info.name, 'Failed to import to config file');
+                    UI.showToast(Constants.importInvalid, { type: 'error' }); 
+					exit();
+					return;	
+				}
 
                 const oldFriendsHistory = inputFileJson.removedFriendHistory.reverse().map((friend, index) => {
                     const convertedFriend = {
