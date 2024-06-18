@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.8.0
+ * @version 0.8.1
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,12 +43,19 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.8.0',
+        version: '0.8.1',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
+        {
+            title: '0.8.1',
+            type: 'improved',
+            items: [
+                'Fixed import failure case from GuildAndFriendRemovalAlerts (thanks Jabeenis!)',
+            ],
+        },
         {
             title: '0.8.0',
             type: 'improved',
@@ -1099,7 +1106,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         try {
             setSavedData(currentUserId, date);
         } catch (error) {
-            Logger.warn(config.info.name, 'Failed to backup config file');
+            Logger.warn(config.info.name, 'Failed to backup config file', error);
             UI.showToast(Constants.importBackupFailure, { type: 'error' });
             exit();
             return;
@@ -1111,8 +1118,15 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             try {
                 const inputFileJson = JSON.parse(ev.target.result);
 
+                if (inputFileJson.settings
+                    && inputFileJson.settings.removedFriendHistory
+                    && inputFileJson.settings.removedGuildHistory) {
+                    inputFileJson.removedFriendHistory = inputFileJson.settings.removedFriendHistory;
+                    inputFileJson.removedGuildHistory = inputFileJson.settings.removedGuildHistory;
+                }
+
                 if (!inputFileJson.removedFriendHistory || !inputFileJson.removedGuildHistory) {
-                    Logger.warn(config.info.name, 'Failed to import to config file');
+                    Logger.warn(config.info.name, 'Failed to import config file');
                     UI.showToast(Constants.importInvalid, { type: 'error' });
                     exit();
                     return;
@@ -1151,7 +1165,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 exit();
             } catch (error2) {
                 currentSavedData = savedData;
-                Logger.warn(config.info.name, 'Failed to import to config file');
+                Logger.warn(config.info.name, 'Failed to import config file', error2);
                 UI.showToast(Constants.importBackupFailure, { type: 'error' });
                 exit();
             }
