@@ -54,6 +54,7 @@ const config = {
             type: 'improved',
             items: [
                 'Fixed import failure case from GuildAndFriendRemovalAlerts (thanks Jabeenis!)',
+                'Fixed problems caused by changes to Discord',
             ],
         },
         {
@@ -271,15 +272,15 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         header: 'rcaHistoryHeader',
         logDeleteBtn: 'rcaHistoryDeleteBtn',
         logDeleteBtnIconLabel: 'rcaHistoryDeleteBtnIcon',
-        logDeleteBtnIconClass: 'rcaHistoryDeleteBtnIcon winButtonClose__6396d winButton_f17fb6',
-        settingsIconClass: 'rcaHistoryDeleteBtnIcon winButtonMinMax_caf9c8 winButton_f17fb6',
+        logDeleteBtnIconClass: 'rcaHistoryDeleteBtnIcon winButtonClose_a934d8 winButton_a934d8',
+        settingsIconClass: 'rcaHistoryDeleteBtnIcon winButtonMinMax_a934d8 winButton_a934d8',
         emptyMessage: 'rcaModalEmptyMessage',
         emptyMessageText: 'rcaModalEmptyMessageText',
         failureMessageText: 'rcaModalFailureMessageText',
-        recentsIcon: 'recentsIcon_a585d7',
-        toolbarIcon: 'iconWrapper_de6cd1 clickable_ce0925',
-        voiceButton: 'button_ab327f',
-        nitroTopBar: 'upperContainer__57565',
+        recentsIcon: 'recentsIcon_ea0547',
+        toolbarIcon: 'iconWrapper_e44302 clickable_e44302',
+        voiceButton: 'button_ae6b8e',
+        nitroTopBar: 'upperContainer_e44302',
     };
 
     const CssClassObjects = {
