@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.8.1
+ * @version 0.8.2
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,14 +43,14 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.8.1',
+        version: '0.8.2',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.8.1',
+            title: '0.8.2',
             type: 'improved',
             items: [
                 'Fixed import failure case from GuildAndFriendRemovalAlerts (thanks Jabeenis!)',
@@ -1133,7 +1133,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                     return;
                 }
 
-                const oldFriendsHistory = inputFileJson.removedFriendHistory.reverse().map((friend, index) => {
+                let oldFriendsHistory = inputFileJson.removedFriendHistory.reverse().map((friend, index) => {
+                    if (!friend.tag) {
+                        return {};
+                    }
                     const convertedFriend = {
                         id: friend.id,
                         tag: friend.tag.endsWith('#0') ? friend.tag.slice(0, -2) : friend.tag, // Upgrade old username entries stored in file
@@ -1144,7 +1147,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                     return convertedFriend;
                 });
 
-                const oldGuildsHistory = inputFileJson.removedGuildHistory.reverse().map((guild, index) => {
+                let oldGuildsHistory = inputFileJson.removedGuildHistory.reverse().map((guild, index) => {
+                    if (!guild.name) {
+                        return {};
+                    }
                     const convertedGuild = {
                         id: guild.id,
                         name: guild.name,
@@ -1156,6 +1162,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                     };
                     return convertedGuild;
                 });
+
+                // filter for empty objects (malformed entries)
+                oldFriendsHistory = oldFriendsHistory.filter((elem) => Object.keys(elem).length !== 0);
+                oldGuildsHistory = oldGuildsHistory.filter((elem) => Object.keys(elem).length !== 0);
 
                 currentSavedData.removedFriendHistory.unshift(...oldFriendsHistory);
                 currentSavedData.removedGuildHistory.unshift(...oldGuildsHistory);
