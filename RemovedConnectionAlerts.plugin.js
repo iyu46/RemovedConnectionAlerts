@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.8.2
+ * @version 0.8.3
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,24 +43,25 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.8.2',
+        version: '0.8.3',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.8.2',
+            title: '0.8.3',
             type: 'improved',
             items: [
-                'Fixed import failure case from GuildAndFriendRemovalAlerts (thanks Jabeenis!)',
-                'Fixed problems caused by changes to Discord',
+                'Fixed problems caused by changes to Discord yet again',
+                'Fixed an issue where there were two scrollbars, and scrolling to the bottom of the history didn\'t scroll all the way',
             ],
         },
         {
-            title: '0.8.0',
+            title: '0.8.0 - 0.8.2',
             type: 'improved',
             items: [
+                'Fixed import failure case from GuildAndFriendRemovalAlerts (thanks Jabeenis!)',
                 'Fixed problems caused by changes to Discord (thanks re11ding!)',
                 'Fixed the pumpkin button problem',
                 'Should fix the button disappearing sometimes',
@@ -192,7 +193,6 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         justify-content: flex-start;
         gap: 8px;
         overflow: auto;
-        max-height: 75vh;
     }
     .rcaHistoryContainer::-webkit-scrollbar {
         display: none;
@@ -278,9 +278,10 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         emptyMessageText: 'rcaModalEmptyMessageText',
         failureMessageText: 'rcaModalFailureMessageText',
         recentsIcon: 'recentsIcon_ea0547',
-        toolbarIcon: 'iconWrapper_e44302 clickable_e44302',
+        toolbarIcon: 'iconWrapper_fc4f04 clickable_fc4f04',
         voiceButton: 'button_ae6b8e',
-        nitroTopBar: 'upperContainer_e44302',
+        nitroTopBar: 'upperContainer_fc4f',
+        iconClass: 'icon_fc4f04',
     };
 
     const CssClassObjects = {
@@ -304,7 +305,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         modalBtnIcon: {
             x: '0',
             y: '0',
-            class: 'icon__4cb88',
+            class: CssClasses.iconClass,
             'aria-hidden': 'true',
             role: 'img',
             width: '24',
@@ -314,7 +315,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         settingsBtnIcon: {
             x: '0',
             y: '0',
-            class: 'icon__4cb88 rcaSettingsIcon',
+            class: `${CssClasses.iconClass} rcaSettingsIcon`,
             'aria-hidden': 'true',
             role: 'img',
             width: '16',
