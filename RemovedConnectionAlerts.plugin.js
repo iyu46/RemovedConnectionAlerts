@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.8.3
+ * @version 0.8.4
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,24 +43,25 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.8.3',
+        version: '0.8.4',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.8.3',
-            type: 'improved',
+            title: '0.8.4',
+            type: 'fixed',
             items: [
-                'Fixed problems caused by changes to Discord yet again',
-                'Fixed an issue where there were two scrollbars, and scrolling to the bottom of the history didn\'t scroll all the way',
+                'Fixed plugin not working on Discord launch and reporting history corruption when there was none',
+                'Fixed the long-unfixed problem of avatars appearing as errors when Discord purged them from their servers',
             ],
         },
         {
-            title: '0.8.0 - 0.8.2',
+            title: '0.8.0 - 0.8.3',
             type: 'improved',
             items: [
+                'Fixed an issue where there were two scrollbars, and scrolling to the bottom of the history didn\'t scroll all the way',
                 'Fixed import failure case from GuildAndFriendRemovalAlerts (thanks Jabeenis!)',
                 'Fixed problems caused by changes to Discord (thanks re11ding!)',
                 'Fixed the pumpkin button problem',
@@ -152,15 +153,20 @@ if (!global.ZeresPluginLibrary) {
 /* eslint-enable max-len, global-require, consistent-return, no-promise-executor-return, import/no-unresolved */
 
 module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
-    const { Data, UI, Utils } = window.BdApi;
+    const {
+        Data, UI, Utils, React, Webpack,
+    } = window.BdApi;
+    const { getModule, Filters } = Webpack;
     const { createTooltip, showConfirmationModal } = UI;
 
     const {
-        DiscordModules, DOMTools, Modals, Logger, Utilities,
+        DOMTools, Modals, Logger,
     } = window.ZLibrary;
-    const {
-        React, Dispatcher, GuildStore, RelationshipStore, UserStore,
-    } = DiscordModules;
+
+    const Dispatcher = getModule(Filters.byProps('dispatch', 'subscribe'), { searchExports: false });
+    const GuildStore = Webpack.getStore('GuildStore');
+    const RelationshipStore = Webpack.getStore('RelationshipStore');
+    const UserStore = Webpack.getStore('UserStore');
 
     const subscribeTargets = [
         'FRIEND_REQUEST_ACCEPTED',
@@ -354,7 +360,13 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         modalFailureCancel: 'Attempt automatic recovery',
         modalBtnTooltipText: 'Removal History',
         svgSourceSadge: 'http://www.w3.org/2000/svg',
-        defaultdiscordAvatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
+        importedDateString: 'Imported from GuildAndFriendRemovalAlerts',
+        importedDateStringLength: 'Imported from GuildAndFriendRemovalAlerts'.length,
+        importedDateUnixThreshold: 10000,
+        defaultDiscordFriendAvatar: 'https://cdn.discordapp.com/embed/avatars/0.png',
+        importedDiscordFriendAvatar: 'https://cdn.discordapp.com/embed/avatars/2.png',
+        defaultDiscordServerAvatar: 'https://cdn.discordapp.com/embed/avatars/4.png',
+        importedDiscordServerAvatar: 'https://cdn.discordapp.com/embed/avatars/3.png',
         changelogTitle: `${config.info.name} Changelog`,
         updateCacheToastSuccessText: 'Updated cache successfully!',
         updateCacheToastFailureText: 'Cache failed to update',
@@ -391,6 +403,29 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
         return false;
     };
+
+    // adapted from https://github.com/zerebos/BDPluginLibrary/blob/3f321f9a3b21f3829277870068b98673ffd5c869/src/modules/utilities.js#L15
+    /* eslint-disable prefer-destructuring, no-param-reassign */
+    const stableSort = (list, comparator) => {
+        const entries = Array(list.length);
+
+        // wrap values with initial indices
+        list.forEach((element, index) => {
+            entries[index] = [index, list[index]];
+        });
+
+        // sort with fallback based on initial indices
+        entries.sort(function (a, b) {
+            const comparison = Number(this(a[1], b[1]));
+            return comparison || a[0] - b[0];
+        }.bind(comparator));
+
+        // re-map original array to stable sorted values
+        for (let index = 0; index < list.length; index += 1) {
+            list[index] = entries[index][1];
+        }
+    };
+    /* eslint-enable prefer-destructuring, no-param-reassign */
 
     const getLastSavedVersion = () => {
         const savedConfig = Data.load(config.info.name, 'config');
@@ -729,7 +764,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     )));
 
     const createServerLogEntry = ({
-        avatarURL = Constants.defaultdiscordAvatar,
+        avatarURL = Constants.defaultDiscordServerAvatar,
         serverName = 'error',
         ownerName = '',
         removedDate = '',
@@ -742,6 +777,12 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         React.createElement('img', {
             src: avatarURL,
             className: CssClasses.avatar,
+            onError: (e) => {
+                e.target.onError = null;
+                e.target.src = removedDate.length < Constants.importedDateStringLength
+                    ? Constants.defaultDiscordServerAvatar
+                    : Constants.importedDiscordServerAvatar;
+            },
         }),
         React.createElement(
             'div',
@@ -756,7 +797,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     );
 
     const createFriendLogEntry = ({
-        avatarURL = Constants.defaultdiscordAvatar,
+        avatarURL = Constants.defaultDiscordFriendAvatar,
         friendName = '',
         removedDate = '',
         id = '',
@@ -769,6 +810,12 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
         React.createElement('img', {
             src: avatarURL,
             className: CssClasses.avatar,
+            onError: (e) => {
+                e.target.onError = null;
+                e.target.src = removedDate.length < Constants.importedDateStringLength
+                    ? Constants.defaultDiscordFriendAvatar
+                    : Constants.importedDiscordFriendAvatar;
+            },
         }),
         React.createElement(
             'div',
@@ -789,8 +836,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
             let removedDate = '';
             const timeRemovedUnix = new Date(g.timeRemoved).valueOf();
-            if (timeRemovedUnix < 10000) {
-                removedDate = 'Imported from GuildAndFriendRemovalAlerts';
+            if (timeRemovedUnix < Constants.importedDateUnixThreshold) {
+                removedDate = Constants.importedDateString;
             } else {
                 removedDate = new Date(g.timeRemoved).toLocaleString('ja-JP', {
                     timeZoneName: 'short',
@@ -817,8 +864,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
             let removedDate = '';
             const timeRemovedUnix = new Date(f.timeRemoved).valueOf();
-            if (timeRemovedUnix < 10000) {
-                removedDate = 'Imported from GuildAndFriendRemovalAlerts';
+            if (timeRemovedUnix < Constants.importedDateUnixThreshold) {
+                removedDate = Constants.importedDateString;
             } else {
                 removedDate = new Date(f.timeRemoved).toLocaleString('ja-JP', {
                     timeZoneName: 'short',
@@ -919,8 +966,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 },
             );
         } else {
-            Utilities.stableSort(recentFriendHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
-            Utilities.stableSort(recentGuildHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
+            stableSort(recentFriendHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
+            stableSort(recentGuildHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
 
             const DAY_IN_MS = (24 * 60 * 60 * 1000); // TODO: variable?
             const recentFriends = splitHistoryBasedOnTimeRemoved(recentFriendHistory, DAY_IN_MS);
