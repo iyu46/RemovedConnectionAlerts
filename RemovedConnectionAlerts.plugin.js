@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.8.4
+ * @version 0.8.5
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,14 +43,14 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.8.4',
+        version: '0.8.5',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.8.4',
+            title: '0.8.4 - 0.8.5',
             type: 'fixed',
             items: [
                 'Fixed plugin not working on Discord launch and reporting history corruption when there was none',
@@ -156,17 +156,17 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const {
         Data, UI, Utils, React, Webpack,
     } = window.BdApi;
-    const { getModule, Filters } = Webpack;
+    const { getByKeys, getStore } = Webpack;
     const { createTooltip, showConfirmationModal } = UI;
 
     const {
         DOMTools, Modals, Logger,
     } = window.ZLibrary;
 
-    const Dispatcher = getModule(Filters.byProps('dispatch', 'subscribe'), { searchExports: false });
-    const GuildStore = Webpack.getStore('GuildStore');
-    const RelationshipStore = Webpack.getStore('RelationshipStore');
-    const UserStore = Webpack.getStore('UserStore');
+    const Dispatcher = getByKeys('dispatch', 'subscribe');
+    const GuildStore = getStore('GuildStore');
+    const RelationshipStore = getStore('RelationshipStore');
+    const UserStore = getStore('UserStore');
 
     const subscribeTargets = [
         'FRIEND_REQUEST_ACCEPTED',
