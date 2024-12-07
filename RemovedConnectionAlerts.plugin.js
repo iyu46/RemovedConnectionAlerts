@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.8.5
+ * @version 0.8.6
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,24 +43,25 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.8.5',
+        version: '0.8.6',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.8.4 - 0.8.5',
-            type: 'fixed',
+            title: '0.8.6',
+            type: 'improved',
             items: [
-                'Fixed plugin not working on Discord launch and reporting history corruption when there was none',
-                'Fixed the long-unfixed problem of avatars appearing as errors when Discord purged them from their servers',
+                'Removed ZeresPluginLibrary dependency',
             ],
         },
         {
-            title: '0.8.0 - 0.8.3',
+            title: '0.8.0 - 0.8.5',
             type: 'improved',
             items: [
+                'Fixed plugin not working on Discord launch and reporting history corruption when there was none',
+                'Fixed the long-unfixed problem of avatars appearing as errors when Discord purged them from their servers',
                 'Fixed an issue where there were two scrollbars, and scrolling to the bottom of the history didn\'t scroll all the way',
                 'Fixed import failure case from GuildAndFriendRemovalAlerts (thanks Jabeenis!)',
                 'Fixed problems caused by changes to Discord (thanks re11ding!)',
@@ -122,45 +123,16 @@ const config = {
     ],
 };
 
-let NoZLibrary;
-if (!global.ZeresPluginLibrary) {
-    const { BdApi } = window;
-    NoZLibrary = () => ({
-        getName() { return config.info.name; },
-        getAuthor() { return config.info.authors.map((a) => a.name).join(', '); },
-        getDescription() { return config.info.description; },
-        getVersion() { return config.info.version; },
-        load() {
-            BdApi.UI.showConfirmationModal(
-                'Library Missing',
-                `The library plugin needed for ${config.info.name} is missing. Please click Download Now to install it.`,
-                {
-                    confirmText: 'Download Now',
-                    cancelText: 'Cancel',
-                    onConfirm: () => {
-                        require('request').get('https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js', async (error, response, body) => {
-                            if (error) return require('electron').shell.openExternal('https://betterdiscord.app/Download?id=9');
-                            await new Promise((r) => require('fs').writeFile(require('path').join(BdApi.Plugins.folder, '0PluginLibrary.plugin.js'), body, r));
-                        });
-                    },
-                },
-            );
-        },
-        start() {},
-        stop() {},
-    });
-}
 /* eslint-enable max-len, global-require, consistent-return, no-promise-executor-return, import/no-unresolved */
-
-module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
+module.exports = () => {
     const {
-        Data, UI, Utils, React, Webpack,
+        Data, DOM, React, UI, Utils, Webpack,
     } = window.BdApi;
     const { getByKeys, getStore } = Webpack;
     const { createTooltip, showConfirmationModal } = UI;
 
     const {
-        DOMTools, Modals, Logger,
+        Logger,
     } = window.ZLibrary;
 
     const Dispatcher = getByKeys('dispatch', 'subscribe');
@@ -192,7 +164,7 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
     const isOlderFriendsShadeOpen = false;
     const isOlderGuildsShadeOpen = false;
 
-    DOMTools.addStyle(config.info.name, `
+    DOM.addStyle(config.info.name, `
     .rcaHistoryContainer {
         display: flex;
         flex-direction: column;
@@ -387,51 +359,13 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
 
     const getCurrentUserId = () => UserStore.getCurrentUser().id;
 
-    // adapted from https://rauenzi.github.io/BDPluginLibrary/docs/modules_pluginupdater.js.html#line-111 in anticipation of removal
-    const semverComparator = (currentVersion, remoteVersion) => {
-        const splitCurrentVersion = currentVersion.split('.').map((e) => parseInt(e, 10));
-        const splitRemoteVersion = remoteVersion.split('.').map((e) => parseInt(e, 10));
-
-        if (splitRemoteVersion[0] > splitCurrentVersion[0]) return true;
-
-        if (splitRemoteVersion[0] === splitCurrentVersion[0]
-            && splitRemoteVersion[1] > splitCurrentVersion[1]) return true;
-
-        if (splitRemoteVersion[0] === splitCurrentVersion[0]
-            && splitRemoteVersion[1] === splitCurrentVersion[1]
-            && splitRemoteVersion[2] > splitCurrentVersion[2]) return true;
-
-        return false;
-    };
-
-    // adapted from https://github.com/zerebos/BDPluginLibrary/blob/3f321f9a3b21f3829277870068b98673ffd5c869/src/modules/utilities.js#L15
-    /* eslint-disable prefer-destructuring, no-param-reassign */
-    const stableSort = (list, comparator) => {
-        const entries = Array(list.length);
-
-        // wrap values with initial indices
-        list.forEach((element, index) => {
-            entries[index] = [index, list[index]];
-        });
-
-        // sort with fallback based on initial indices
-        entries.sort(function (a, b) {
-            const comparison = Number(this(a[1], b[1]));
-            return comparison || a[0] - b[0];
-        }.bind(comparator));
-
-        // re-map original array to stable sorted values
-        for (let index = 0; index < list.length; index += 1) {
-            list[index] = entries[index][1];
-        }
-    };
-    /* eslint-enable prefer-destructuring, no-param-reassign */
-
     const getLastSavedVersion = () => {
         const savedConfig = Data.load(config.info.name, 'config');
 
         // if there is no savedConfig or local version is more up to date than last-seen version
-        if (!savedConfig || !savedConfig.version || semverComparator(savedConfig?.version, config.info.version)) {
+        if (!savedConfig
+            || !savedConfig.version
+            || (Utils.semverCompare(savedConfig?.version, config.info.version)) > 0) {
             const newConfig = {
                 version: config.info.version,
                 settings: {
@@ -966,8 +900,8 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
                 },
             );
         } else {
-            stableSort(recentFriendHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
-            stableSort(recentGuildHistory, (a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
+            recentFriendHistory.sort((a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
+            recentGuildHistory.sort((a, b) => (new Date(b.timeRemoved) - new Date(a.timeRemoved)));
 
             const DAY_IN_MS = (24 * 60 * 60 * 1000); // TODO: variable?
             const recentFriends = splitHistoryBasedOnTimeRemoved(recentFriendHistory, DAY_IN_MS);
@@ -1408,11 +1342,11 @@ module.exports = (!global.ZeresPluginLibrary) ? NoZLibrary : () => {
             const lastSavedVersion = getLastSavedVersion();
             settings = getSettingsData();
             if (lastSavedVersion.showChangelog) {
-                Modals.showChangelogModal(
-                    Constants.changelogTitle,
-                    lastSavedVersion.version,
-                    config.changelog,
-                );
+                UI.showChangelogModal({
+                    title: Constants.changelogTitle,
+                    subtitle: lastSavedVersion.version,
+                    changes: config.changelog,
+                });
             }
 
             savedUserId = getCurrentUserId();
