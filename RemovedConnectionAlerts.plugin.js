@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.8.7
+ * @version 0.8.8
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,21 +43,22 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.8.7',
+        version: '0.8.8',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.8.7',
+            title: '0.8.7 - 0.8.8',
             type: 'improved',
             items: [
+                'Fixed problems caused by changes to Discord',
                 'Removed ZeresPluginLibrary dependency',
             ],
         },
         {
-            title: '0.8.0 - 0.8.5',
+            title: '0.8.0 - 0.8.6',
             type: 'improved',
             items: [
                 'Fixed plugin not working on Discord launch and reporting history corruption when there was none',
@@ -74,7 +75,6 @@ const config = {
             title: '0.7.0 - 0.7.2',
             type: 'added',
             items: [
-                'Fixed problems caused by changes to Discord',
                 'Replaced obsolete "Update cache" button on UI with "Create manual backup"',
                 'In doing the above, moved "Update cache" to settings menu, replacing the old manual backup button',
                 'The buttons in the main UI and the settings UI are 1000% pumpkin shaped now (it\'s a bug that is noncritical but nothing is broken so it\'s totally fine',
@@ -246,16 +246,16 @@ module.exports = () => {
         header: 'rcaHistoryHeader',
         logDeleteBtn: 'rcaHistoryDeleteBtn',
         logDeleteBtnIconLabel: 'rcaHistoryDeleteBtnIcon',
-        logDeleteBtnIconClass: 'rcaHistoryDeleteBtnIcon winButtonClose_a934d8 winButton_a934d8',
-        settingsIconClass: 'rcaHistoryDeleteBtnIcon winButtonMinMax_a934d8 winButton_a934d8',
+        logDeleteBtnIconClass: 'rcaHistoryDeleteBtnIcon winButtonClose__421ed winButton__421ed',
+        settingsIconClass: 'rcaHistoryDeleteBtnIcon winButtonMinMax__421ed winButton__421ed',
         emptyMessage: 'rcaModalEmptyMessage',
         emptyMessageText: 'rcaModalEmptyMessageText',
         failureMessageText: 'rcaModalFailureMessageText',
-        recentsIcon: 'recentsIcon_ea0547',
-        toolbarIcon: 'iconWrapper_fc4f04 clickable_fc4f04',
-        voiceButton: 'button_ae6b8e',
-        nitroTopBar: 'upperContainer_fc4f',
-        iconClass: 'icon_fc4f04',
+        recentsIcon: 'recentsIcon_c99c29',
+        toolbarIcon: 'iconWrapper__9293f clickable__9293f',
+        voiceButton: 'button__9db96',
+        nitroTopBar: 'upperContainer__9293f',
+        iconClass: 'icon__9293f',
     };
 
     const CssClassObjects = {
