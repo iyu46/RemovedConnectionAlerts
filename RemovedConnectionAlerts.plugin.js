@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.8.9
+ * @version 0.9.0
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,25 +43,26 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.8.9',
+        version: '0.9.0',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.8.7 - 0.8.9',
+            title: '0.9.0',
             type: 'improved',
             items: [
                 'Fixed problems caused by changes to Discord',
-                'Removed ZeresPluginLibrary dependency',
-                'Fixed bug regarding deleting history logs on Mac OS',
+
             ],
         },
         {
-            title: '0.8.0 - 0.8.6',
+            title: '0.8.0 - 0.8.9',
             type: 'improved',
             items: [
+                'Removed ZeresPluginLibrary dependency',
+                'Fixed bug regarding deleting history logs on Mac OS',
                 'Fixed plugin not working on Discord launch and reporting history corruption when there was none',
                 'Fixed the long-unfixed problem of avatars appearing as errors when Discord purged them from their servers',
                 'Fixed an issue where there were two scrollbars, and scrolling to the bottom of the history didn\'t scroll all the way',
@@ -136,6 +137,7 @@ module.exports = () => {
     const GuildStore = getStore('GuildStore');
     const RelationshipStore = getStore('RelationshipStore');
     const UserStore = getStore('UserStore');
+    const GuildIconUtils = getByKeys('getGuildIconURL');
 
     const subscribeTargets = [
         'FRIEND_REQUEST_ACCEPTED',
@@ -314,7 +316,7 @@ module.exports = () => {
 
     const Constants = { // aka locale_EN
         emptyMessageText: 'Nothing to see here for now!',
-        failureMessageText: 'Uh oh! It looks like your history file has been corrupted, and RemovedConnectionAlerts cannot start. This can be mitigated with frequent backing up of your history file. There are a couple things you can do to proceed:<br /><br />1. Manually overwrite your history file with a backup. Both can be found in your BetterDiscord plugins folder. The corrupted file to replace is named "RemovedConnectionAlerts_{your Discord user ID number here}.config.json". Your Discord ID number is shown on the bottom to the left. <br /><br />2. Delete your corrupted history file and start anew.<br /><br />A restart is required after performing any of these operations!',
+        failureMessageText: 'Uh oh! It looks like your history file might be corrupted, and RemovedConnectionAlerts cannot start. This can be caused by a recent update to Discord, or it may be some other error. This can be mitigated with frequent backing up of your history file. There are a couple things you can do to proceed:<br /><br />1. Look on the RemovedConnectionAlerts GitHub page to see if this is a recent issue and if a fix is on the way. If there is not an existing issue, you can create one if you know the cause - if not, you can try proceeding down this list, but try not to delete anything unless you are certain the file is corrupted (ie. try opening it in a text editor and see if it looks weird). <br /><br />2. Manually overwrite your history file with a backup. Both can be found in your BetterDiscord plugins folder. The corrupted file to replace is named "RemovedConnectionAlerts_{your Discord user ID number here}.config.json". Your Discord ID number is shown on the bottom to the left. <br /><br />3. Delete your corrupted history file and start anew.<br /><br />A restart is required after performing any of these operations!',
         autoRecoveryNewestAttempt: 'Attempting to import history from first automatic backup file...',
         autoRecoverySecondNewestAttempt: 'Newest import failed. Attempting import from second automatic backup file...',
         autoRecoverySuccess: 'Recovery successful! Try restarting BetterDiscord!',
@@ -498,8 +500,12 @@ module.exports = () => {
                 id: guild.id,
                 name: guild.name,
                 icon: guild.icon,
-                avatarURL: guild.getIconURL(40, false),
-                animatedAvatarURL: guild.getIconURL(null, true),
+                avatarURL: GuildIconUtils.getGuildIconURL({
+                    id: guild.id, icon: guild.icon, canAnimate: false, size: 40,
+                }),
+                animatedAvatarURL: GuildIconUtils.getGuildIconURL({
+                    id: guild.id, icon: guild.icon, canAnimate: true, size: 40,
+                }),
                 joinedAt: guild.joinedAt,
                 owner: ownerName,
                 ownerId: guild.ownerId,
