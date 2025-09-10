@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.9.0
+ * @version 0.9.1
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,18 +43,25 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.9.0',
+        version: '0.9.1',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.9.0',
+            title: '0.9.1',
             type: 'improved',
             items: [
                 'Fixed problems caused by changes to Discord',
 
+            ],
+        },
+        {
+            title: '0.9.0',
+            type: 'improved',
+            items: [
+                'Fixed problems caused by changes to Discord',
             ],
         },
         {
@@ -238,6 +245,10 @@ module.exports = () => {
     .rcaImportInput {
         display: none;
     }
+    .rcaModalIcon {
+        width: 75% !important;
+        height: 75% !important;
+    }
     `);
 
     /* eslint-disable max-len */
@@ -254,11 +265,10 @@ module.exports = () => {
         emptyMessage: 'rcaModalEmptyMessage',
         emptyMessageText: 'rcaModalEmptyMessageText',
         failureMessageText: 'rcaModalFailureMessageText',
-        recentsIcon: 'recentsIcon_c99c29',
         toolbarIcon: 'iconWrapper__9293f clickable__9293f',
         voiceButton: 'button__9db96',
         nitroTopBar: 'upperContainer__9293f',
-        iconClass: 'icon__9293f',
+        iconClass: 'icon__9293f rcaModalIcon',
     };
 
     const CssClassObjects = {
@@ -1007,7 +1017,7 @@ module.exports = () => {
         return () => { observer.disconnect(); };
     };
 
-    const getChannelHeaderInboxIcon = () => document.querySelector(`.${CssClasses.recentsIcon}`);
+    const getChannelHeaderInboxIcon = () => document.querySelector('[aria-label="Inbox"]');
 
     const getNitroHeaderContainer = () => document.querySelector(`.${CssClasses.nitroTopBar}`);
 
