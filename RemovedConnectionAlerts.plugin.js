@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.9.1
+ * @version 0.9.2
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,14 +43,14 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.9.1',
+        version: '0.9.2',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.9.1',
+            title: '0.9.2',
             type: 'improved',
             items: [
                 'Fixed problems caused by changes to Discord',
@@ -58,7 +58,7 @@ const config = {
             ],
         },
         {
-            title: '0.9.0',
+            title: '0.9.0 - 0.9.1',
             type: 'improved',
             items: [
                 'Fixed problems caused by changes to Discord',
@@ -187,7 +187,7 @@ module.exports = () => {
         justify-content: flex-start;
         gap: 4px;
         padding: 4px 2px 4px 2px;
-        /* border: 2px solid var(--header-primary); */
+        /* border: 2px solid var(--text-strong); */
         /* border-radius: 5px; */
         margin: 1px;
     }
@@ -195,7 +195,7 @@ module.exports = () => {
         width: 48px;
         height: 48px;
         border-radius: 50%;
-        border: 3px solid var(--header-primary);
+        border: 3px solid var(--text-strong);
         margin-right: 6px;
     }
     .rcaHistoryInfo {
@@ -203,12 +203,12 @@ module.exports = () => {
         flex-direction: column;
         justify-content: center;
         gap: 4px;
-        color: var(--header-primary);
+        color: var(--text-strong);
     }
     .rcaHistoryHeader {
         font-size: 1.1rem;
         font-weight: 500;
-        color: var(--header-primary);
+        color: var(--text-strong);
     }
     .rcaHistoryDeleteBtn {
         display: flex;
@@ -222,7 +222,7 @@ module.exports = () => {
         top: 0px !Important;
         width: 22px !important;
         height: 22px !important;
-        border: var(--interactive-normal) solid 2px;
+        border: var(--interactive-text-default) solid 2px;
         border-radius: 50%;
     }
     .rcaModalEmptyMessage {
@@ -232,11 +232,11 @@ module.exports = () => {
         padding: 16px;
     }
     .rcaModalEmptyMessageText {
-        color: var(--header-primary);
+        color: var(--text-strong);
         font-size: 1.5rem;
     }
     .rcaModalFailureMessageText {
-        color: var(--header-primary);
+        color: var(--text-strong);
     }
     .rcaSettingsIcon {
         width: 16px !important;
