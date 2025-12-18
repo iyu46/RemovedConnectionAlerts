@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.9.3
+ * @version 0.9.4
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,14 +43,14 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.9.2',
+        version: '0.9.4',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.9.3',
+            title: '0.9.4',
             type: 'improved',
             items: [
                 '(deep sigh) Say it with me... Fixed problems caused by changes to Discord',
@@ -58,7 +58,7 @@ const config = {
             ],
         },
         {
-            title: '0.9.0 - 0.9.2',
+            title: '0.9.0 - 0.9.3',
             type: 'improved',
             items: [
                 'Fixed problems caused by changes to Discord',
@@ -137,7 +137,7 @@ module.exports = () => {
     const {
         Data, DOM, Logger, React, UI, Utils, Webpack,
     } = window.BdApi;
-    const { getByKeys, getStore } = Webpack;
+    const { getByKeys, getModule, getStore } = Webpack;
     const { createTooltip, showConfirmationModal } = UI;
 
     const Dispatcher = getByKeys('dispatch', 'subscribe');
@@ -251,6 +251,9 @@ module.exports = () => {
     }
     `);
 
+    const upperContainerModule = getModule((m) => m.upperContainer);
+    const titleBarModule = getModule((m) => m.titleBar);
+
     /* eslint-disable max-len */
     const CssClasses = {
         container: 'rcaHistoryContainer',
@@ -260,15 +263,14 @@ module.exports = () => {
         header: 'rcaHistoryHeader',
         logDeleteBtn: 'rcaHistoryDeleteBtn',
         logDeleteBtnIconLabel: 'rcaHistoryDeleteBtnIcon',
-        logDeleteBtnIconClass: 'rcaHistoryDeleteBtnIcon _421edea01cb52e16-winButtonClose _421edea01cb52e16-winButton',
-        settingsIconClass: 'rcaHistoryDeleteBtnIcon _421edea01cb52e16-winButtonMinMax _421edea01cb52e16-winButton',
+        logDeleteBtnIconClass: `rcaHistoryDeleteBtnIcon ${titleBarModule.winButtonClose}`,
+        settingsIconClass: `rcaHistoryDeleteBtnIcon ${titleBarModule.winButtonMinMax}`,
         emptyMessage: 'rcaModalEmptyMessage',
         emptyMessageText: 'rcaModalEmptyMessageText',
         failureMessageText: 'rcaModalFailureMessageText',
-        toolbarIcon: '_9293f6b2fc12398a-iconWrapper _9293f6b2fc12398a-clickable',
-        voiceButton: '_9db96f7a92c2b507-button',
-        nitroTopBar: '_9293f6b2fc12398a-upperContainer',
-        iconClass: '_9293f6b2fc12398a-icon rcaModalIcon',
+        toolbarIcon: `${upperContainerModule.iconWrapper} ${upperContainerModule.clickable}`,
+        iconClass: `${upperContainerModule.icon} rcaModalIcon`,
+        upperContainer: upperContainerModule.upperContainer,
     };
 
     const CssClassObjects = {
@@ -1019,30 +1021,26 @@ module.exports = () => {
 
     const getChannelHeaderInboxIcon = () => document.querySelector('[aria-label="Inbox"]');
 
-    const getNitroHeaderContainer = () => document.querySelector(`.${CssClasses.nitroTopBar}`);
-
-    const isHelpIconInChannelHeader = (inboxIcon) => inboxIcon?.nextSibling?.className.includes('anchor');
+    const getUpperContainer = () => document.querySelector(`.${CssClasses.upperContainer}`);
 
     const insertButtonAtLocationWithStyle = () => {
         if (settings.hideButton === true) return;
         try {
             const channelHeaderInboxIcon = getChannelHeaderInboxIcon();
             if (channelHeaderInboxIcon) {
-                const isHelpIconPresent = isHelpIconInChannelHeader(channelHeaderInboxIcon);
                 const rcaModalBtnClassName = Utils.className(
-                    { [CssClasses.voiceButton]: (!isHelpIconPresent) },
                     CssClasses.toolbarIcon,
                 );
                 rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
                 channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
                 hasViewErrorTriggered = false;
             } else {
-                const nitroTopBar = getNitroHeaderContainer();
+                const upperContainerBar = getUpperContainer();
                 const rcaModalBtnClassName = Utils.className(
                     CssClasses.toolbarIcon,
                 );
                 rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
-                nitroTopBar.lastChild.insertAdjacentElement('afterend', rcaModalBtn);
+                upperContainerBar.lastChild.insertAdjacentElement('afterbegin', rcaModalBtn);
                 hasViewErrorTriggered = false;
             }
         } catch (e) {
