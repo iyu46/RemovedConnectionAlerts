@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.9.2
+ * @version 0.9.3
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -50,15 +50,15 @@ const config = {
     },
     changelog: [
         {
-            title: '0.9.2',
+            title: '0.9.3',
             type: 'improved',
             items: [
-                'Fixed problems caused by changes to Discord',
+                '(deep sigh) Say it with me... Fixed problems caused by changes to Discord',
 
             ],
         },
         {
-            title: '0.9.0 - 0.9.1',
+            title: '0.9.0 - 0.9.2',
             type: 'improved',
             items: [
                 'Fixed problems caused by changes to Discord',
@@ -260,15 +260,15 @@ module.exports = () => {
         header: 'rcaHistoryHeader',
         logDeleteBtn: 'rcaHistoryDeleteBtn',
         logDeleteBtnIconLabel: 'rcaHistoryDeleteBtnIcon',
-        logDeleteBtnIconClass: 'rcaHistoryDeleteBtnIcon winButtonClose__421ed winButton__421ed',
-        settingsIconClass: 'rcaHistoryDeleteBtnIcon winButtonMinMax__421ed winButton__421ed',
+        logDeleteBtnIconClass: 'rcaHistoryDeleteBtnIcon _421edea01cb52e16-winButtonClose _421edea01cb52e16-winButton',
+        settingsIconClass: 'rcaHistoryDeleteBtnIcon _421edea01cb52e16-winButtonMinMax _421edea01cb52e16-winButton',
         emptyMessage: 'rcaModalEmptyMessage',
         emptyMessageText: 'rcaModalEmptyMessageText',
         failureMessageText: 'rcaModalFailureMessageText',
-        toolbarIcon: 'iconWrapper__9293f clickable__9293f',
-        voiceButton: 'button__9db96',
-        nitroTopBar: 'upperContainer__9293f',
-        iconClass: 'icon__9293f rcaModalIcon',
+        toolbarIcon: '_9293f6b2fc12398a-iconWrapper _9293f6b2fc12398a-clickable',
+        voiceButton: '_9db96f7a92c2b507-button',
+        nitroTopBar: '_9293f6b2fc12398a-upperContainer',
+        iconClass: '_9293f6b2fc12398a-icon rcaModalIcon',
     };
 
     const CssClassObjects = {
