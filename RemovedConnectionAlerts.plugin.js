@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.9.4
+ * @version 0.9.5
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,22 +43,22 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.9.4',
+        version: '0.9.5',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.9.4',
+            title: '0.9.5',
             type: 'improved',
             items: [
                 '(deep sigh) Say it with me... Fixed problems caused by changes to Discord',
-
+                'YOUR HISTORY SHOULD BE FINE THE ERROR MESSAGE WAS NOT ACCURATE THIS TIME!!',
             ],
         },
         {
-            title: '0.9.0 - 0.9.3',
+            title: '0.9.0 - 0.9.4',
             type: 'improved',
             items: [
                 'Fixed problems caused by changes to Discord',
@@ -140,10 +140,11 @@ module.exports = () => {
     const { getByKeys, getModule, getStore } = Webpack;
     const { createTooltip, showConfirmationModal } = UI;
 
-    const Dispatcher = getByKeys('dispatch', 'subscribe');
+    const UserStore = getStore('UserStore');
+    // eslint-disable-next-line no-underscore-dangle
+    const Dispatcher = UserStore._dispatcher;
     const GuildStore = getStore('GuildStore');
     const RelationshipStore = getStore('RelationshipStore');
-    const UserStore = getStore('UserStore');
     const GuildIconUtils = getByKeys('getGuildIconURL');
 
     const subscribeTargets = [
@@ -219,7 +220,7 @@ module.exports = () => {
         padding-right: 8px;
     }
     .rcaHistoryDeleteBtnIcon {
-        top: 0px !Important;
+        top: 0px !important;
         width: 22px !important;
         height: 22px !important;
         border: var(--interactive-text-default) solid 2px;
@@ -252,7 +253,7 @@ module.exports = () => {
     `);
 
     const upperContainerModule = getModule((m) => m.upperContainer);
-    const titleBarModule = getModule((m) => m.titleBar);
+    const titleBarModule = getModule((m) => m.winButtonClose);
 
     /* eslint-disable max-len */
     const CssClasses = {
@@ -328,7 +329,7 @@ module.exports = () => {
 
     const Constants = { // aka locale_EN
         emptyMessageText: 'Nothing to see here for now!',
-        failureMessageText: 'Uh oh! It looks like your history file might be corrupted, and RemovedConnectionAlerts cannot start. This can be caused by a recent update to Discord, or it may be some other error. This can be mitigated with frequent backing up of your history file. There are a couple things you can do to proceed:<br /><br />1. Look on the RemovedConnectionAlerts GitHub page to see if this is a recent issue and if a fix is on the way. If there is not an existing issue, you can create one if you know the cause - if not, you can try proceeding down this list, but try not to delete anything unless you are certain the file is corrupted (ie. try opening it in a text editor and see if it looks weird). <br /><br />2. Manually overwrite your history file with a backup. Both can be found in your BetterDiscord plugins folder. The corrupted file to replace is named "RemovedConnectionAlerts_{your Discord user ID number here}.config.json". Your Discord ID number is shown on the bottom to the left. <br /><br />3. Delete your corrupted history file and start anew.<br /><br />A restart is required after performing any of these operations!',
+        failureMessageText: 'Uh oh! RemovedConnectionAlerts cannot start. This can be caused by a recent update to Discord, or it may be some other error. It might be the case that your history file is corrupted - do not panic, as this is not always the case (this can be mitigated with frequent backing up of your history file). There are a couple things you can do to proceed:<br /><br />1. Look on the RemovedConnectionAlerts GitHub page to see if this is a recent issue and if a fix is on the way. If there is not an existing issue, you can create one if you know the cause - if not, you can try proceeding down this list, but try not to delete anything unless you are certain the file is corrupted (ie. try opening it in a text editor and see if it looks weird). <br /><br />2. Manually overwrite your history file with a backup. Both can be found in your BetterDiscord plugins folder. The possibly corrupted file to replace is named "RemovedConnectionAlerts_{your Discord user ID number here}.config.json". Your Discord ID number is shown on the bottom to the left. <br /><br />3. Delete your corrupted history file and start anew.<br /><br />A restart is required after performing any of these operations!',
         autoRecoveryNewestAttempt: 'Attempting to import history from first automatic backup file...',
         autoRecoverySecondNewestAttempt: 'Newest import failed. Attempting import from second automatic backup file...',
         autoRecoverySuccess: 'Recovery successful! Try restarting BetterDiscord!',
