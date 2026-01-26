@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.9.5
+ * @version 0.9.6
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -137,8 +137,8 @@ module.exports = () => {
     const {
         Data, DOM, Logger, React, UI, Utils, Webpack,
     } = window.BdApi;
-    const { getByKeys, getModule, getStore } = Webpack;
-    const { createTooltip, showConfirmationModal } = UI;
+    const {getByKeys, getModule, getStore, getByStrings} = Webpack;
+    const {createTooltip, showConfirmationModal} = UI;
 
     const UserStore = getStore('UserStore');
     // eslint-disable-next-line no-underscore-dangle
@@ -146,6 +146,9 @@ module.exports = () => {
     const GuildStore = getStore('GuildStore');
     const RelationshipStore = getStore('RelationshipStore');
     const GuildIconUtils = getByKeys('getGuildIconURL');
+
+    const ProfileUtils = getByKeys("openUserProfileModal")
+    const fetchUserProfile = getByStrings('USER_UPDATE', '.USER(', {searchExports: true})
 
     const subscribeTargets = [
         'FRIEND_REQUEST_ACCEPTED',
@@ -387,10 +390,10 @@ module.exports = () => {
             };
 
             Data.save(config.info.name, 'config', newConfig);
-            return { version: config.info.version, showChangelog: true };
+            return {version: config.info.version, showChangelog: true};
         }
 
-        return { version: savedConfig.version, showChangelog: false };
+        return {version: savedConfig.version, showChangelog: false};
     };
 
     const getSavedData = (currentUserId, backup = '') => {
@@ -491,7 +494,7 @@ module.exports = () => {
             }
         });
 
-        return { friendsArr, friendsSet };
+        return {friendsArr, friendsSet};
     };
 
     const getGuildsList = () => {
@@ -527,7 +530,7 @@ module.exports = () => {
             guildsSet.add(guild.id);
         });
 
-        return { guildsArr, guildsSet };
+        return {guildsArr, guildsSet};
     };
 
     const populateEmptyCurrentSavedData = () => {
@@ -629,7 +632,7 @@ module.exports = () => {
             isUpdating = false;
         }
 
-        return { removedFriends, removedGuilds };
+        return {removedFriends, removedGuilds};
     };
 
     const createEmptyMessageElem = () => {
@@ -663,7 +666,7 @@ module.exports = () => {
 
         const item = workingHistory.find(
             (i) => (i.id === deleteId)
-            && (getTruncatedMsTime(i.timeRemoved) === getTruncatedMsTime(removedDate)),
+                && (getTruncatedMsTime(i.timeRemoved) === getTruncatedMsTime(removedDate)),
         );
         workingHistory.splice(workingHistory.indexOf(item), 1);
         setSavedData(getCurrentUserId());
@@ -698,7 +701,7 @@ module.exports = () => {
                 const deleteBtns = document.querySelectorAll(`.${CssClasses.logDeleteBtnIconLabel}`) || [];
 
                 deleteBtns.forEach(
-                    (elem) => createTooltip(elem, deleteBtnTooltipText, { style: 'info', side: 'right' }),
+                    (elem) => createTooltip(elem, deleteBtnTooltipText, {style: 'info', side: 'right'}),
                 );
             }
         },
@@ -719,12 +722,12 @@ module.exports = () => {
     )));
 
     const createServerLogEntry = ({
-        avatarURL = Constants.defaultDiscordServerAvatar,
-        serverName = 'error',
-        ownerName = '',
-        removedDate = '',
-        id = '',
-    }) => React.createElement(
+          avatarURL = Constants.defaultDiscordServerAvatar,
+          serverName = 'error',
+          ownerName = '',
+          removedDate = '',
+          id = '',
+      }) => React.createElement(
         'div',
         {
             className: CssClasses.item,
@@ -752,12 +755,12 @@ module.exports = () => {
     );
 
     const createFriendLogEntry = ({
-        avatarURL = Constants.defaultDiscordFriendAvatar,
-        friendName = '',
-        removedDate = '',
-        id = '',
-        globalName = '',
-    }) => React.createElement(
+          avatarURL = Constants.defaultDiscordFriendAvatar,
+          friendName = '',
+          removedDate = '',
+          id = '',
+          globalName = '',
+      }) => React.createElement(
         'div',
         {
             className: CssClasses.item,
@@ -765,6 +768,9 @@ module.exports = () => {
         React.createElement('img', {
             src: avatarURL,
             className: CssClasses.avatar,
+            onClick: async () => {
+                requestAnimationFrame(() => fetchUserProfile(id).then(x => ProfileUtils.openUserProfileModal({userId: id})))
+            },
             onError: (e) => {
                 e.target.onError = null;
                 e.target.src = removedDate.length < Constants.importedDateStringLength
@@ -847,7 +853,7 @@ module.exports = () => {
         let elemsMoreThan24HoursIndex = 0;
         let wasCurrOlderThan24Hours = false;
 
-        if (history.length === 0) return { recentElems: [], olderElems: [] };
+        if (history.length === 0) return {recentElems: [], olderElems: []};
 
         const yesterdayTimestamp = new Date().getTime() - time;
         while (elemsMoreThan24HoursIndex < history.length) {
@@ -868,7 +874,7 @@ module.exports = () => {
                 olderElems = history.slice(elemsMoreThan24HoursIndex);
             }
 
-            return { recentElems, olderElems };
+            return {recentElems, olderElems};
         }
 
         // history is length 1
@@ -878,7 +884,7 @@ module.exports = () => {
             recentElems = history;
         }
 
-        return { recentElems, olderElems };
+        return {recentElems, olderElems};
     };
 
     const validateAndReturnCurrentUserId = () => {
@@ -898,7 +904,7 @@ module.exports = () => {
 
     const backup = () => {
         setSavedData(validateAndReturnCurrentUserId(), Date.now());
-        UI.showToast(Constants.backupSuccess, { type: 'success' });
+        UI.showToast(Constants.backupSuccess, {type: 'success'});
     };
 
     const openHistoryWindow = () => {
@@ -917,7 +923,7 @@ module.exports = () => {
                 'div',
                 {
                     className: CssClasses.container,
-                    dangerouslySetInnerHTML: { __html: element.outerHTML },
+                    dangerouslySetInnerHTML: {__html: element.outerHTML},
                 },
             );
         } else {
@@ -972,7 +978,8 @@ module.exports = () => {
         showConfirmationModal(config.info.name, element, {
             confirmText: Constants.modalConfirm,
             cancelText: Constants.modalCancel,
-            onConfirm: () => {},
+            onConfirm: () => {
+            },
             onCancel: () => {
                 backup();
             },
@@ -991,14 +998,15 @@ module.exports = () => {
             'div',
             {
                 className: CssClasses.container,
-                dangerouslySetInnerHTML: { __html: element.outerHTML },
+                dangerouslySetInnerHTML: {__html: element.outerHTML},
             },
         );
 
         showConfirmationModal(config.info.name, element, {
             confirmText: Constants.modalConfirm,
             cancelText: getCurrentUserId(),
-            onConfirm: () => {},
+            onConfirm: () => {
+            },
         });
     };
 
@@ -1016,8 +1024,10 @@ module.exports = () => {
             });
         });
 
-        observer.observe(document.body, { subtree: true, childList: true });
-        return () => { observer.disconnect(); };
+        observer.observe(document.body, {subtree: true, childList: true});
+        return () => {
+            observer.disconnect();
+        };
     };
 
     const getChannelHeaderInboxIcon = () => document.querySelector('[aria-label="Inbox"]');
@@ -1068,7 +1078,7 @@ module.exports = () => {
         rcaModalBtn.appendChild(rcaModalBtnIcon);
 
         insertButtonAtLocationWithStyle();
-        createTooltip(rcaModalBtn, Constants.modalBtnTooltipText, { side: 'bottom' });
+        createTooltip(rcaModalBtn, Constants.modalBtnTooltipText, {side: 'bottom'});
     };
 
     const update = () => {
@@ -1092,7 +1102,7 @@ module.exports = () => {
         const inputFile = e.target.files && e.target.files[0];
         if (!inputFile || inputFile.type !== 'application/json') {
             Logger.warn(config.info.name, 'Failed to start import process due to invalid file');
-            UI.showToast(Constants.importInvalid, { type: 'error' });
+            UI.showToast(Constants.importInvalid, {type: 'error'});
             exit();
             return;
         }
@@ -1102,16 +1112,16 @@ module.exports = () => {
 
         const savedData = getSavedData(currentUserId);
         Logger.info(config.info.name, `Backing up config file for ${savedUserId} at ${date}`);
-        UI.showToast(Constants.importBackupStart, { type: 'info' });
+        UI.showToast(Constants.importBackupStart, {type: 'info'});
         try {
             setSavedData(currentUserId, date);
         } catch (error) {
             Logger.warn(config.info.name, 'Failed to backup config file', error);
-            UI.showToast(Constants.importBackupFailure, { type: 'error' });
+            UI.showToast(Constants.importBackupFailure, {type: 'error'});
             exit();
             return;
         }
-        UI.showToast(Constants.importBackupSuccessful, { type: 'info' });
+        UI.showToast(Constants.importBackupSuccessful, {type: 'info'});
 
         const inputFileReader = new FileReader();
         inputFileReader.onload = (ev) => {
@@ -1127,7 +1137,7 @@ module.exports = () => {
 
                 if (!inputFileJson.removedFriendHistory || !inputFileJson.removedGuildHistory) {
                     Logger.warn(config.info.name, 'Failed to import config file');
-                    UI.showToast(Constants.importInvalid, { type: 'error' });
+                    UI.showToast(Constants.importInvalid, {type: 'error'});
                     exit();
                     return;
                 }
@@ -1171,12 +1181,12 @@ module.exports = () => {
 
                 setSavedData(currentUserId);
 
-                UI.showToast(Constants.importSuccessful, { type: 'success' });
+                UI.showToast(Constants.importSuccessful, {type: 'success'});
                 exit();
             } catch (error2) {
                 currentSavedData = savedData;
                 Logger.warn(config.info.name, 'Failed to import config file', error2);
-                UI.showToast(Constants.importBackupFailure, { type: 'error' });
+                UI.showToast(Constants.importBackupFailure, {type: 'error'});
                 exit();
             }
         };
@@ -1214,9 +1224,9 @@ module.exports = () => {
                                     const currentUserId = validateAndReturnCurrentUserId();
                                     compareAndUpdateCurrentSavedData(currentUserId);
 
-                                    UI.showToast(Constants.updateCacheToastSuccessText, { type: 'success' });
+                                    UI.showToast(Constants.updateCacheToastSuccessText, {type: 'success'});
                                 } catch (err) {
-                                    UI.showToast(Constants.updateCacheToastFailureText, { type: 'error' });
+                                    UI.showToast(Constants.updateCacheToastFailureText, {type: 'error'});
                                 }
                             },
                         }, React.createElement(
@@ -1326,8 +1336,9 @@ module.exports = () => {
                                     try {
                                         rcaModalBtnRemoveObserver();
                                         rcaModalBtn.remove();
-                                    // eslint-disable-next-line no-empty
-                                    } catch (e) {}
+                                        // eslint-disable-next-line no-empty
+                                    } catch (e) {
+                                    }
 
                                     rcaModalBtnRemoveObserver = undefined;
                                 } else {
@@ -1349,11 +1360,21 @@ module.exports = () => {
     };
 
     return ({
-        getName() { return config.info.name; },
-        getAuthor() { return config.info.authors.map((a) => a.name).join(', '); },
-        getDescription() { return config.info.description; },
-        getVersion() { return config.info.version; },
-        getSettingsPanel() { return openSettingsPanel(); },
+        getName() {
+            return config.info.name;
+        },
+        getAuthor() {
+            return config.info.authors.map((a) => a.name).join(', ');
+        },
+        getDescription() {
+            return config.info.description;
+        },
+        getVersion() {
+            return config.info.version;
+        },
+        getSettingsPanel() {
+            return openSettingsPanel();
+        },
         start() {
             Logger.info(config.info.name, `version ${config.info.version} has started.`);
             const lastSavedVersion = getLastSavedVersion();
