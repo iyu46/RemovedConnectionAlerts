@@ -2,7 +2,7 @@
  * @name RemovedConnectionAlerts
  * @author iris!
  * @authorId 102528230413578240
- * @version 0.9.5
+ * @version 0.9.6
  * @description Keep track which friends and servers remove you (original by Metalloriff)
  * @website https://github.com/iyu46/RemovedConnectionAlerts
  * @source https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js
@@ -43,22 +43,22 @@ const config = {
                 github_username: 'iyu46',
             },
         ],
-        version: '0.9.5',
+        version: '0.9.6',
         description: 'Keep track which friends and servers remove you (original by Metalloriff)',
         github: 'https://github.com/iyu46/RemovedConnectionAlerts',
         github_raw: 'https://raw.githubusercontent.com/iyu46/RemovedConnectionAlerts/main/RemovedConnectionAlerts.plugin.js',
     },
     changelog: [
         {
-            title: '0.9.5',
+            title: '0.9.6',
             type: 'improved',
             items: [
-                '(deep sigh) Say it with me... Fixed problems caused by changes to Discord',
-                'YOUR HISTORY SHOULD BE FINE THE ERROR MESSAGE WAS NOT ACCURATE THIS TIME!!',
+                'Fixed issue regarding the plugin thinking you removed yourself (it might happen one more time after updating but after that, not again)',
+                'Added toggle setting to explicitly allow bypassing the Ctrl+Shift requirement when deleting history entries',
             ],
         },
         {
-            title: '0.9.0 - 0.9.4',
+            title: '0.9.0 - 0.9.5',
             type: 'improved',
             items: [
                 'Fixed problems caused by changes to Discord',
@@ -358,6 +358,7 @@ module.exports = () => {
         settingsImportOldHistory: 'Import history from Metalloriff\'s GuildAndFriendRemovalAlerts',
         settingsManualOpenButton: 'Manually open history window',
         settingsHideButtonFromView: 'Hide history button from main window',
+        settingsBypassDeleteKeybinds: 'Bypass Ctrl+Shift requirement when removing history entries (Careful!)',
         settingsManualUpdate: 'Trigger a manual update for your current history cache',
         importBackupStart: 'Making a backup of your current history cache...',
         importBackupSuccessful: 'Backup successful! Attempting to import history...',
@@ -383,6 +384,7 @@ module.exports = () => {
                 version: config.info.version,
                 settings: {
                     hideButton: false,
+                    bypassDeleteKeybinds: false,
                 },
             };
 
@@ -453,6 +455,7 @@ module.exports = () => {
         if (!savedSettingsData.settings) {
             savedSettingsData.settings = {
                 hideButton: false,
+                bypassDeleteKeybinds: false,
             };
 
             Data.save(config.info.name, 'config', savedSettingsData);
@@ -477,6 +480,7 @@ module.exports = () => {
         relationships.forEach((relationship) => {
             const user = UserStore.getUser(relationship.toString());
             if (user) {
+                if (user.id === getCurrentUserId()) return;
                 const animatedAvatarURL = user.getAvatarURL(null, null, true);
                 const hasAnimatedAvatarURL = animatedAvatarURL.includes('gif');
                 const filteredUser = {
@@ -705,7 +709,7 @@ module.exports = () => {
     }, React.createElement('div', {
         className: CssClasses.logDeleteBtnIconClass,
         onClick: (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
+            if (((e.ctrlKey || e.metaKey) && e.shiftKey) || settings.bypassDeleteKeybinds === true) {
                 deleteLogEntry(deleteId, removedDate, isFriend);
             }
         },
@@ -1336,6 +1340,34 @@ module.exports = () => {
                                         insertButtonAtLocationWithStyle();
                                     });
                                 }
+
+                                setSettingsData(settings);
+                            },
+                        })),
+                    ],
+                ),
+
+                /* Bypass Ctrl+Shift requirement when deleting history entries */
+                React.createElement(
+                    'div',
+                    {
+                        className: CssClasses.item,
+                    },
+                    [
+                        React.createElement(
+                            'div',
+                            {
+                                className: CssClasses.info,
+                            },
+                            React.createElement('h4', null, Constants.settingsBypassDeleteKeybinds),
+                        ),
+                        React.createElement('div', {
+                            className: CssClasses.logDeleteBtn,
+                        }, React.createElement('input', {
+                            type: 'checkbox',
+                            defaultChecked: settings.bypassDeleteKeybinds,
+                            onChange: () => {
+                                settings.bypassDeleteKeybinds = !settings.bypassDeleteKeybinds;
 
                                 setSettingsData(settings);
                             },
