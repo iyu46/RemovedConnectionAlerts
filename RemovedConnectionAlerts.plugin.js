@@ -1024,7 +1024,10 @@ module.exports = () => {
         return () => { observer.disconnect(); };
     };
 
-    const getChannelHeaderInboxIcon = () => document.querySelector('[aria-label="Inbox"]');
+    const getChannelHeaderInboxIcon = () => {
+        const nodeList = document.querySelectorAll(`[class^="trailing"]`)
+        return nodeList[nodeList.length - 1]
+    };
 
     const getUpperContainer = () => document.querySelector(`.${CssClasses.upperContainer}`);
 
@@ -1037,7 +1040,9 @@ module.exports = () => {
                     CssClasses.toolbarIcon,
                 );
                 rcaModalBtn.setAttribute('class', rcaModalBtnClassName);
-                channelHeaderInboxIcon.parentElement.insertBefore(rcaModalBtn, channelHeaderInboxIcon);
+                const parent = channelHeaderInboxIcon;
+                const i = [...parent.children].indexOf(channelHeaderInboxIcon);
+                parent.insertBefore(rcaModalBtn, parent.children[i + 2] ?? null);
                 hasViewErrorTriggered = false;
             } else {
                 const upperContainerBar = getUpperContainer();
