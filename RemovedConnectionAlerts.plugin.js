@@ -1026,7 +1026,7 @@ module.exports = () => {
 
     const getChannelHeaderInboxIcon = () => {
         const nodeList = document.querySelectorAll(`[class^="trailing"]`)
-        return nodeList[nodeList.length - 1]
+        return Object.values(nodeList).find(x => x.children.length > 3)
     };
 
     const getUpperContainer = () => document.querySelector(`.${CssClasses.upperContainer}`);
